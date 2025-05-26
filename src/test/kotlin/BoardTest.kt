@@ -2,6 +2,7 @@ import board.ChessBoard
 import board.Board
 import board.Piece
 import board.Piece.*
+import misc.Debug
 import org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.Test
@@ -247,9 +248,51 @@ class BoardTest {
 
 
     @Test
-    fun textVisualPrints() {
+    fun doStuffForDebug() {
+
         repeat(5) { board.addPiece(Piece.random(), random.nextInt(64)) }
+        repeat(5) {
+            board = Board()
+            var s1 = 0
+            var s2 = 0
+
+            // Get two random non-identical squares and two random Pieces.
+            while (s1 == s2) {
+                s1 = Random.nextInt(64)
+                s2 = Random.nextInt(64)
+            }
+            val p1 = Piece.random()
+            val p2 = Piece.random()
+
+            // Add the random pieces onto their respective random squares
+            board.addPiece(p1, s1)
+            board.addPiece(p2, s2)
+            assertTrue(board.fetchPiece(s1) == p1)
+            assertTrue(board.fetchPieceBitBoard(p1) and (1uL shl s1) != 0uL)
+            assertTrue(board.fetchPiece(s2) == p2)
+            assertTrue(board.fetchPieceBitBoard(p2) and (1uL shl s2) != 0uL)
+
+            // Move random piece 1 to random square 2
+            board.movePiece(s1, s2)
+
+            // Ensure that random piece 1 is now on random square 2
+            assertTrue(board.fetchPiece(s2) == p1)
+            assertTrue(board.fetchPieceBitBoard(p1) and (1uL shl s2) != 0uL)
+
+            // Ensure that random square 1 is Empty
+            assertTrue(board.fetchPiece(s1).isEmpty())
+            assertTrue(board.fetchPieceBitBoard(p1) and (1uL shl s1) == 0uL)
+
+            // Ensure that random piece 2 is no longer on random square 2
+
+            assertTrue(
+                if (p1 == p2) (board.fetchPieceBitBoard(p2).countOneBits() == 1) else
+                    (board.fetchPieceBitBoard(p2) and (1uL shl s2) == 0uL))
+            { "p1: $p1, p2: $p2" }
+
+        }
         println(board.textVisual())
+        println(Debug.getLogs())
     }
 
 

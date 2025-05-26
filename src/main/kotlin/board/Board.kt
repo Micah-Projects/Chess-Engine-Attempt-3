@@ -9,6 +9,9 @@ import misc.square
 import board.Piece.*
 import board.Color.*
 import misc.BOARD_SIZE
+import misc.Debug
+import misc.Debug.Area
+import misc.Debug.Area.*
 import misc.boardSquares
 
 class Board : ChessBoard {
@@ -34,13 +37,18 @@ class Board : ChessBoard {
             bitBoards[bb] = BitBoards.removeBit(bitBoards[bb], square)
         }
         bitBoards[i] = BitBoards.addBit(targetBB, square)
+        Debug.log(BOARD) { "$piece added on $square (${Squares.asText(square)})" }
     }
 
     override fun removePiece(square: square) {
         require(isInBounds(square)) { "Cannot remove piece on out-of-bounds square: $square " }
         for (i in bitBoards.indices) {
             bitBoards[i] = BitBoards.removeBit(bitBoards[i], square)
+            if (bitBoards[i] != BitBoards.removeBit(bitBoards[i], square)) {
+                Debug.log(BOARD) { "${Piece.from(i)} added on $square -> ${Squares.asText(square)}" }
+            }
         }
+
     }
 
     override fun movePiece(start: square, end: square) {
@@ -52,6 +60,10 @@ class Board : ChessBoard {
 
         removePiece(start)
         addPiece(piece, end)
+
+        Debug.log(BOARD) {
+            "$piece moved from $start -> $end : ${Squares.asText(start)} -> ${Squares.asText(end)}"
+        }
     }
 
     override fun fetchPiece(square: square): Piece {
