@@ -10,13 +10,13 @@ import board.Piece.*
 import board.Color.*
 import misc.BOARD_SIZE
 import misc.Debug
-import misc.Debug.Area
 import misc.Debug.Area.*
+import misc.FenString
 import misc.boardSquares
 
 class Board : ChessBoard {
 
-    private val bitBoards: Array<BitBoard>
+    private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
 
     constructor() {
@@ -31,6 +31,7 @@ class Board : ChessBoard {
 
     override fun addPiece(piece: Piece, square: square) {
         require(isInBounds(square)) { "Cannot add piece on out-of-bounds square: $square " }
+        if (piece.isEmpty()) return
         val i = piece.get()
         val targetBB = bitBoards[i]
         for (bb in bitBoards.indices) {
@@ -50,6 +51,25 @@ class Board : ChessBoard {
         }
 
     }
+
+    /*
+        - Needs to support Enpassant:
+          Pawns need to...
+            - update the enpassant square
+            - move diagonally
+            - remove the pawn behind its capture square
+
+        - Needs to support promotions
+          Pawns need to...
+            - replace itself with a promotion when on its respective promotion rank
+
+        - Needs to support Castling:
+          Kings need to...
+            - move two squares horizontally
+            - move the corresponding rook to its opposite side
+
+
+     */
 
     override fun movePiece(start: square, end: square) {
         val piece = fetchPiece(start)
@@ -88,13 +108,72 @@ class Board : ChessBoard {
     override fun clone(): ChessBoard {
         return Board(bitBoards, enpassantSquare)
     }
-    // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+
     override fun loadFen(fen: String) {
-        TODO("Not yet implemented")
+        val fen = FenString(fen)
+        val easyBoard = simplifyFenBoard(fen.board)
+        enpassantSquare = fen.enpassantSquare
+        loadEasyBoard(easyBoard)
+    }
+
+    private fun loadEasyBoard(ezBoard: String) {
+        clear()
+        for (square in boardSquares) {
+            val piece = Piece.fromSymbol(ezBoard[square].toString())
+            addPiece(piece, square)
+        }
+    }
+
+    private fun clear() {
+        bitBoards = Array<BitBoard>(12) { EMPTY_BB }
+        enpassantSquare = null
+    }
+
+    private fun simplifyFenBoard(fenBoard: String): String {
+        val fenBuilder = StringBuilder()
+        val fenBoard = fenBoard.split("/").reversed()
+        for (rank in 0..7) {
+            val fenRank = fenBoard[rank]
+            for (char in fenRank) {
+                if (char.isDigit()) {
+                    fenBuilder.append("0".padStart(char.digitToInt(), '0'), )
+                } else {
+                    fenBuilder.append(char)
+                }
+            }
+        }
+        return fenBuilder.toString()
+
     }
 
     override fun toFen(): String {
-        TODO("Not yet implemented")
+        val fen = StringBuilder()
+        var segment = StringBuilder()
+        var counter = 0
+        for (square in boardSquares) {
+           val piece = fetchPiece(square)
+            when (piece) {
+                EMPTY -> counter++
+                else -> {
+                    if (counter > 0) {
+                        segment.append(counter)
+                        counter = 0
+                    }
+                    segment.append(piece.symbol())
+                }
+            }
+            if (Squares.fileIs(square, 7)) {
+                if (counter > 0) {
+                    segment.append(counter)
+                    counter = 0
+                }
+                fen.append(segment.reversed())
+                if (square != 63)fen.append('/')
+                segment = StringBuilder()
+            }
+        }
+
+        return fen.toString().reversed()
     }
 
     override fun textVisual(viewFrom: Color): String {

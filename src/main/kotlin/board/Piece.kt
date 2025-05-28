@@ -30,6 +30,18 @@ enum class Piece(private val type: Int, private val symbol: String) {
         fun random(): Piece {
             return playable.random()
         }
+
+        /**
+         * Returns the Piece associated with [symbol].
+         * @param symbol The singular character string which represents a piece
+         * @return The correct piece or empty if input isn't correct.
+         */
+        fun fromSymbol(symbol: String): Piece {
+            for (piece in playable) {
+                if (piece.symbol() == symbol) return piece
+            }
+            return EMPTY
+        }
     }
 
     /**

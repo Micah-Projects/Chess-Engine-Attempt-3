@@ -29,7 +29,8 @@ class FenString(fen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
     val blackCanKingCastle: Boolean =  castlingBlock.getOrNull(2) == 'k'
     val blackCanQueenCastle: Boolean = castlingBlock.getOrNull(3) == 'q'
 
-    val enpassantSquare: Int? = if (fenComponents.getOrNull(3) != null) Squares.valueOf(fenComponents[3]) else null
+    val enpassantSquare: Int? =
+        if (fenComponents.getOrNull(3) != null && fenComponents[3] != "-" ) Squares.valueOf(fenComponents[3]) else null
 
     val numHalfMoves: Int = (fenComponents.getOrNull(4)?.toInt() ?: 0)
     val numFullMoves: Int = (fenComponents.getOrNull(5)?.toInt() ?: 0)

@@ -188,6 +188,7 @@ class BoardTest {
     @Test
     fun fetchPieceReturnsCorrectPiece() {
         board.loadFen("8/8/8/8/8/8/8/R7 w - - 0 1") // White rook on a1
+        println(board.textVisual())
         assertTrue(board.fetchPiece(0) == WHITE_ROOK)
     }
 
@@ -244,6 +245,22 @@ class BoardTest {
     fun cloneIsNotExactSame() {
         val clone = board.clone()
         assertFalse(clone === board)
+    }
+
+    @Test
+    fun toFenReturnsCorrectFen() {
+        val fens = listOf<String>(
+            "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+            "r3k2r/pp1b1ppp/2n1pn2/2bp4/4P3/2N1BN2/PPP2PPP/R2QKB1R w KQkq - 6 8",
+            "2rq1rk1/pp2bppp/2np1n2/4p3/2B1P3/2NP1N1P/PPP2PP1/R1BQ1RK1 b - - 5 10",
+            "r1bq1rk1/ppp1bppp/2n2n2/3p4/3P4/2NBPN2/PP3PPP/R1BQ1RK1 b - - 7 7",
+            "3r1rk1/1pp1qppp/p1npbn2/4p3/2P1P3/1PN1BN1P/PB3PP1/2RQ1RK1 w - - 10 12"
+        )
+
+        for (fen in fens) {
+            board.loadFen(fen)
+            assertEquals(fen.split(" ")[0], board.toFen())
+        }
     }
 
 
