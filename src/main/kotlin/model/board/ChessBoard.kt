@@ -1,6 +1,7 @@
 package model.board
 
 import model.misc.BitBoard
+import model.misc.move
 
 /**
  * An interface for chess boards.
@@ -8,24 +9,30 @@ import model.misc.BitBoard
 interface ChessBoard {
 
     /**
-     * Adds a [piece] onto the given [square]
+     * Adds a [piece] onto the given [square].
      * @param square The square index (0–63).
      * @param piece The chess piece
      */
     fun addPiece(piece: Piece, square: Int)
 
     /**
-     * Removes the piece on the given [square]
+     * Removes the piece on the given [square].
      * @param square The square index (0–63).
      */
     fun removePiece(square: Int)
 
     /**
-     * Moves a piece from [start] to [end]
+     * Moves a piece from [start] to [end] regardless of legality.
      * @param start Start square index
      * @param end End square index
      */
     fun movePiece(start: Int, end: Int)
+
+    /**
+     * Makes a legal move on the board.
+     * @param [move] An encoded Int containing start, end, and various move flags.
+     */
+    fun makeMove(move: move)
 
     /**
      * Returns the piece on the given [square].
@@ -35,7 +42,7 @@ interface ChessBoard {
     fun fetchPiece(square: Int): Piece
 
     /**
-     * @return The [BitBoard] of the given [pieceType]
+     * @return The [BitBoard] of the given [pieceType].
      */
     fun fetchPieceBitBoard(pieceType: Piece): BitBoard
 

@@ -59,7 +59,7 @@ fun move.start(): Int = (this and START_SQUARE_SELECTOR) shr START_SQUARE_BIT
 fun move.end(): Int = (this and END_SQUARE_SELECTOR) shr END_SQUARE_BIT
 fun move.flags(): Int = (this and FLAGS_SELECTOR) shr FLAGS_BIT
 
-fun move.getPromotion(): Int = (flags() and PROMOTION_TYPE_FLAG) shr PROMOTION_TYPE_BIT
+fun move.getPromotion(): Piece = Piece.from ((flags() and PROMOTION_TYPE_FLAG) shr PROMOTION_TYPE_BIT)
 fun move.getString(): String = getFlagNames().joinToString() + " From ${Squares.asText(start())} to ${ Squares.asText(end())}"
 fun move.literal(): String = "${Squares.asText(start())}${Squares.asText(end())}"
 
@@ -76,7 +76,7 @@ fun move.getFlagNames(): List<String> {
     if (isEnPassant()) names.add("En Passant")
     if (isCastle()) names.add("Castle")
     if (isCheck()) names.add("Check")
-    if (isPromotion()) names.add("Promotion to ${Piece.Companion.from(getPromotion())}")
+    if (isPromotion()) names.add("Promotion to ${getPromotion()}")
     if (names.isEmpty()) names.add("Quiet Move")
 
     return names

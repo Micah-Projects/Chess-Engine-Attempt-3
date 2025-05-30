@@ -8,7 +8,11 @@ import model.misc.BitBoards
 import model.misc.Debug
 import model.misc.FenString
 import model.misc.Squares
+import model.misc.end
+import model.misc.getPromotion
+import model.misc.move
 import model.misc.square
+import model.misc.start
 
 class Board : ChessBoard {
     companion object {
@@ -75,7 +79,12 @@ class Board : ChessBoard {
      */
 
     override fun movePiece(start: square, end: square) {
+        movePiece(start, end, EMPTY)
+    }
+
+    private fun movePiece(start: square, end: square, promotion: Piece = EMPTY) {
         val piece = fetchPiece(start)
+        val promotion = if (piece.isPawn() && promotion.isEmpty()) defaultPromotion(piece.color()) else promotion
         require(piece.isNotEmpty()) { "No piece found on square: $start." }
         require(isInBounds(start)) { "Start square: $start isn't in bounds." }
         require(isInBounds(end)) { "end square: $end isn't in bounds." }
@@ -84,8 +93,20 @@ class Board : ChessBoard {
         removePiece(start)
         addPiece(piece, end)
 
-        Debug.log(Debug.Area.BOARD) {
+        Debug.log(BOARD) {
             "$piece moved from $start -> $end : ${Squares.asText(start)} -> ${Squares.asText(end)}"
+        }
+    }
+
+
+    override fun makeMove(move: move) {
+        movePiece(move.start(), move.end(), move.getPromotion())
+    }
+
+    private fun defaultPromotion(color: Color): Piece {
+        return when (color) {
+            WHITE -> WHITE_QUEEN
+            BLACK -> BLACK_QUEEN
         }
     }
 
