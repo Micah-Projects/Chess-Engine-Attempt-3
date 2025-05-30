@@ -8,7 +8,6 @@ private const val START_SQUARE_BIT = 0
 private const val END_SQUARE_BIT = 6
 private const val FLAGS_BIT = 12
 
-
 private const val START_SQUARE_SELECTOR =   0b000000000000000111111
 private const val END_SQUARE_SELECTOR =     0b000000000111111000000
 private const val FLAGS_SELECTOR =          0b111111111000000000000
@@ -22,16 +21,16 @@ private const val ENPASSANT_BIT = 3
 private const val CHECK_BIT = 4
 private const val PROMOTION_TYPE_BIT = 5
 
-private const val CAPTURE_FLAG =    1 shl CAPTURE_BIT               // 0b00000001
-private const val CASTLE_FLAG =     1 shl CASTLE_BIT                // 0b00000010
-private const val PROMOTION_FLAG =  1 shl PROMOTION_BIT             // 0b00000100
-private const val ENPASSANT_FLAG =  1 shl ENPASSANT_BIT             // 0b00001000
-private const val CHECK_FLAG =      1 shl CHECK_BIT                 // 0b00010000
-private const val PROMOTION_TYPE_FLAG = 0b111 shl PROMOTION_TYPE_BIT// 0b11100000
+private const val CAPTURE_FLAG =    1 shl CAPTURE_BIT               // 0b000000001
+private const val CASTLE_FLAG =     1 shl CASTLE_BIT                // 0b000000010
+private const val PROMOTION_FLAG =  1 shl PROMOTION_BIT             // 0b000000100
+private const val ENPASSANT_FLAG =  1 shl ENPASSANT_BIT             // 0b000001000
+private const val CHECK_FLAG =      1 shl CHECK_BIT                 // 0b000010000
+private const val PROMOTION_TYPE_FLAG = 15 shl PROMOTION_TYPE_BIT   // 0b111100000
 
-object Move {
+object Moves {
     fun encode(startSquare: Int, endSquare: Int, flags: Int = 0): move {
-        return  (startSquare shl START_SQUARE_BIT) or (endSquare shl END_SQUARE_BIT) or  (flags shl FLAGS_BIT)
+        return (startSquare shl START_SQUARE_BIT) or (endSquare shl END_SQUARE_BIT) or (flags shl FLAGS_BIT)
     }
 
     fun encodeFlags(
@@ -56,25 +55,20 @@ object Move {
     fun getPromotionType(flags: Int): Int = (flags and START_SQUARE_SELECTOR) shr START_SQUARE_BIT
 }
 
-
-
-
 fun move.start(): Int = (this and START_SQUARE_SELECTOR) shr START_SQUARE_BIT
 fun move.end(): Int = (this and END_SQUARE_SELECTOR) shr END_SQUARE_BIT
 fun move.flags(): Int = (this and FLAGS_SELECTOR) shr FLAGS_BIT
 
-fun move.getPromotion(): Int = (this.flags() and PROMOTION_TYPE_FLAG) shr PROMOTION_TYPE_BIT
-fun move.getString(): String = getFlagNames().joinToString() + " From ${Squares.asText(this.start())} to ${ Squares.asText(this.end())}"
-fun move.literal(): String = "${Squares.asText(this.start())}${Squares.asText(this.end())}"
+fun move.getPromotion(): Int = (flags() and PROMOTION_TYPE_FLAG) shr PROMOTION_TYPE_BIT
+fun move.getString(): String = getFlagNames().joinToString() + " From ${Squares.asText(start())} to ${ Squares.asText(end())}"
+fun move.literal(): String = "${Squares.asText(start())}${Squares.asText(end())}"
 
-fun move.isCapture (): Boolean = this.flags() and CAPTURE_FLAG != 0
-fun move.isCastle (): Boolean = this.flags() and CASTLE_FLAG != 0
-fun move.isPromotion (): Boolean = this.flags() and PROMOTION_FLAG != 0
-fun move.isEnPassant(): Boolean  = this.flags() and ENPASSANT_FLAG != 0
-fun move.isCheck(): Boolean  = this.flags() and CHECK_FLAG != 0
-fun move.isQuiet(): Boolean = this.flags() and (CAPTURE_FLAG or PROMOTION_FLAG or CASTLE_FLAG or ENPASSANT_FLAG or CHECK_FLAG) == 0
-
-
+fun move.isCapture(): Boolean = flags() and CAPTURE_FLAG != 0
+fun move.isCastle(): Boolean = flags() and CASTLE_FLAG != 0
+fun move.isPromotion(): Boolean = flags() and PROMOTION_FLAG != 0
+fun move.isEnPassant(): Boolean  = flags() and ENPASSANT_FLAG != 0
+fun move.isCheck(): Boolean  = flags() and CHECK_FLAG != 0
+fun move.isQuiet(): Boolean = flags() and (CAPTURE_FLAG or PROMOTION_FLAG or CASTLE_FLAG or ENPASSANT_FLAG or CHECK_FLAG) == 0
 
 fun move.getFlagNames(): List<String> {
     val names = mutableListOf<String>()
