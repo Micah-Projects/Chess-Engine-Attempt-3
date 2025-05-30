@@ -1,8 +1,8 @@
-import board.ChessBoard
-import board.Board
-import board.Piece
-import board.Piece.*
-import misc.Debug
+import model.board.ChessBoard
+import model.board.Board
+import model.board.Piece
+import model.board.Piece.*
+import model.misc.Debug
 import org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.Test

@@ -1,16 +1,14 @@
-package board
+package model.board
 
-import misc.BitBoards
-import misc.BitBoards.EMPTY_BB
-import misc.BitBoard
-import misc.Squares
-import misc.square
-
-import board.Piece.*
-import board.Color.*
-import misc.Debug
-import misc.Debug.Area.*
-import misc.FenString
+import model.board.Piece.*
+import model.board.Color.*
+import model.misc.Debug.Area.*
+import model.misc.BitBoard
+import model.misc.BitBoards
+import model.misc.Debug
+import model.misc.FenString
+import model.misc.Squares
+import model.misc.square
 
 class Board : ChessBoard {
     companion object {
@@ -25,7 +23,7 @@ class Board : ChessBoard {
     private var enpassantSquare: square?
 
     constructor() {
-        bitBoards = Array<BitBoard>(12) { EMPTY_BB }
+        bitBoards = Array<BitBoard>(12) { BitBoards.EMPTY_BB }
         enpassantSquare = null
     }
 
@@ -43,7 +41,7 @@ class Board : ChessBoard {
             bitBoards[bb] = BitBoards.removeBit(bitBoards[bb], square)
         }
         bitBoards[i] = BitBoards.addBit(targetBB, square)
-        Debug.log(BOARD) { "$piece added on $square (${Squares.asText(square)})" }
+        Debug.log(Debug.Area.BOARD) { "$piece added on $square (${Squares.asText(square)})" }
     }
 
     override fun removePiece(square: square) {
@@ -51,7 +49,7 @@ class Board : ChessBoard {
         for (i in bitBoards.indices) {
             bitBoards[i] = BitBoards.removeBit(bitBoards[i], square)
             if (bitBoards[i] != BitBoards.removeBit(bitBoards[i], square)) {
-                Debug.log(BOARD) { "${Piece.from(i)} added on $square -> ${Squares.asText(square)}" }
+                Debug.log(Debug.Area.BOARD) { "${Piece.from(i)} added on $square -> ${Squares.asText(square)}" }
             }
         }
 
@@ -86,7 +84,7 @@ class Board : ChessBoard {
         removePiece(start)
         addPiece(piece, end)
 
-        Debug.log(BOARD) {
+        Debug.log(Debug.Area.BOARD) {
             "$piece moved from $start -> $end : ${Squares.asText(start)} -> ${Squares.asText(end)}"
         }
     }
@@ -96,11 +94,11 @@ class Board : ChessBoard {
         for (i in bitBoards.indices) {
             if (bitBoards[i] and end != 0uL) return Piece.from(i)
         }
-        return EMPTY
+        return Piece.EMPTY
     }
 
     override fun fetchPieceBitBoard(pieceType: Piece): BitBoard {
-        require(pieceType.isNotEmpty()) { "There is no bit board for $EMPTY." }
+        require(pieceType.isNotEmpty()) { "There is no bit board for ${Piece.EMPTY}." }
         return bitBoards[pieceType.get()]
     }
 
@@ -130,7 +128,7 @@ class Board : ChessBoard {
     }
 
     private fun clear() {
-        bitBoards = Array<BitBoard>(12) { EMPTY_BB }
+        bitBoards = Array<BitBoard>(12) { BitBoards.EMPTY_BB }
         enpassantSquare = null
     }
 
@@ -158,7 +156,7 @@ class Board : ChessBoard {
         for (square in boardSquares) {
            val piece = fetchPiece(square)
             when (piece) {
-                EMPTY -> counter++
+                Piece.EMPTY -> counter++
                 else -> {
                     if (counter > 0) {
                         segment.append(counter)
@@ -200,6 +198,6 @@ class Board : ChessBoard {
             }
         }
         board.append(letters)
-        return if (viewFrom == WHITE) board.toString() else board.toString().reversed()
+        return if (viewFrom == Color.WHITE) board.toString() else board.toString().reversed()
     }
 }

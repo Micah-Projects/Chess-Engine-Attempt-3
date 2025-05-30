@@ -1,7 +1,6 @@
-package board
+package model.board
 
-import misc.BitBoard
-import board.Color.*
+import model.misc.BitBoard
 
 /**
  * An interface for chess boards.
@@ -67,5 +66,5 @@ interface ChessBoard {
      * Gets a string representation of this ChessBoard.
      * @return [String]
      */
-    fun textVisual(viewFrom: Color = WHITE): String
+    fun textVisual(viewFrom: Color = Color.WHITE): String
 }

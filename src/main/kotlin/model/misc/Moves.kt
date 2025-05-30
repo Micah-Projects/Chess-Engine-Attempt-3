@@ -1,6 +1,6 @@
-package misc
-import board.Piece
-import board.Piece.*
+package model.misc
+
+import model.board.Piece
 
 typealias move = Int
 
@@ -39,14 +39,14 @@ object Moves {
         promotion: Boolean = false,
         enpassant: Boolean = false,
         check: Boolean  = false,
-        promotionType: Piece = EMPTY
+        promotionType: Piece = Piece.EMPTY
     ): Int {
         return ((if (capture) 1 else 0) shl CAPTURE_BIT) or
                 ((if (castle) 1 else 0) shl CASTLE_BIT) or
                 ((if (promotion) 1 else 0) shl PROMOTION_BIT) or
                 ((if (enpassant) 1 else 0) shl ENPASSANT_BIT) or
                 ((if (check) 1 else 0) shl CHECK_BIT) or
-                ((if (promotionType != EMPTY) promotionType else EMPTY).get() shl PROMOTION_TYPE_BIT)
+                ((if (promotionType != Piece.EMPTY) promotionType else Piece.EMPTY).get() shl PROMOTION_TYPE_BIT)
     }
 
     fun addFlags(move: move, flags: Int = 0): move = (move) or  (flags shl FLAGS_BIT)
@@ -76,7 +76,7 @@ fun move.getFlagNames(): List<String> {
     if (isEnPassant()) names.add("En Passant")
     if (isCastle()) names.add("Castle")
     if (isCheck()) names.add("Check")
-    if (isPromotion()) names.add("Promotion to ${Piece.from(getPromotion())}")
+    if (isPromotion()) names.add("Promotion to ${Piece.Companion.from(getPromotion())}")
     if (names.isEmpty()) names.add("Quiet Move")
 
     return names

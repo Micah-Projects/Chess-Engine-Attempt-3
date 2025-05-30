@@ -1,9 +1,6 @@
-package board
+package model.board
 
-import board.Color.BLACK
-import board.Color.WHITE
-import misc.Debug
-import misc.Debug.Area.*
+import model.misc.Debug
 
 /**
  * A chess piece.
@@ -44,7 +41,7 @@ enum class Piece(private val type: Int, private val symbol: String) {
         fun fromSymbol(symbol: String): Piece {
             for (piece in playable) {
                 if (piece.symbol() == symbol) {
-                    Debug.log(PIECE) { " $piece parsed from $symbol " }
+                    Debug.log(Debug.Area.PIECE) { " $piece parsed from $symbol " }
                     return piece
                 }
             }
@@ -52,7 +49,7 @@ enum class Piece(private val type: Int, private val symbol: String) {
         }
     }
 
-    private val color: Color by lazy { if (isWhite()) WHITE else BLACK }
+    private val color: Color by lazy { if (isWhite()) Color.WHITE else Color.BLACK }
 
     /**
      * returns the Int value which represents this piece.
@@ -113,10 +110,10 @@ enum class Piece(private val type: Int, private val symbol: String) {
     /**
      * Returns whether this piece is white.
      */
-    fun isWhite(): Boolean = color == WHITE
+    fun isWhite(): Boolean = color == Color.WHITE
 
     /**
      * Returns whether this piece is black.
      */
-    fun isBlack(): Boolean = color == WHITE
+    fun isBlack(): Boolean = color == Color.WHITE
 }

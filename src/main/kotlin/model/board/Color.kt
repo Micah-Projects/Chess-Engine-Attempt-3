@@ -1,7 +1,6 @@
-package board
+package model.board
 
-import misc.Debug
-import misc.Debug.Area.*
+import model.misc.Debug
 
 /**
  * The colors for two chess players.
@@ -18,7 +17,7 @@ enum class Color(private val c: Int) {
         fun from(value: Int): Color = when (value) {
             0 -> WHITE
             1 -> BLACK
-            else -> throw IllegalArgumentException(Debug.log(COLOR) { "There is no color represented by value: $value" })
+            else -> throw IllegalArgumentException(Debug.log(Debug.Area.COLOR) { "There is no color represented by value: $value" })
         }
     }
 

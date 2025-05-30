@@ -1,8 +1,7 @@
-package misc
-import board.Color
+package model.misc
+import model.board.Color
 import kotlin.text.isNotEmpty
 import kotlin.text.split
-import board.Color.*
 
 /**
  * A class which parses and represents chess FEN notation.
@@ -20,7 +19,7 @@ class FenString(fen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
 
     val board: String = fenComponents[0]
     val turn: Color = if (fenComponents.size > 1 && fenComponents[1].length == 1)
-    if (fenComponents[1][0]  == 'w') WHITE else BLACK else WHITE
+    if (fenComponents[1][0]  == 'w') Color.WHITE else Color.BLACK else Color.WHITE
 
     private val castlingBlock = fenComponents.getOrNull(2)?: ""
 

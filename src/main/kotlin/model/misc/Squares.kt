@@ -1,5 +1,6 @@
-package misc
-import board.Board.Companion.boardSquares
+package model.misc
+import model.board.Board
+import model.board.Board.Companion.boardSquares
 import kotlin.math.abs
 import kotlin.math.sign
 
