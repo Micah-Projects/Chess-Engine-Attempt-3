@@ -1,5 +1,10 @@
 package board
 
+import board.Color.BLACK
+import board.Color.WHITE
+import misc.Debug
+import misc.Debug.Area.*
+
 /**
  * A chess piece.
  */
@@ -34,22 +39,32 @@ enum class Piece(private val type: Int, private val symbol: String) {
         /**
          * Returns the Piece associated with [symbol].
          * @param symbol The singular character string which represents a piece
-         * @return The correct piece or empty if input isn't correct.
+         * @return The corresponding piece or empty if input isn't correct.
          */
         fun fromSymbol(symbol: String): Piece {
             for (piece in playable) {
-                if (piece.symbol() == symbol) return piece
+                if (piece.symbol() == symbol) {
+                    Debug.log(PIECE) { " $piece parsed from $symbol " }
+                    return piece
+                }
             }
             return EMPTY
         }
     }
+
+    private val color: Color by lazy { if (isWhite()) WHITE else BLACK }
 
     /**
      * returns the Int value which represents this piece.
      */
     fun get() = type
 
-
+    /**
+     * returns the color of this piece.
+     */
+    fun color(): Color {
+        return color
+    }
     /**
      * returns the String representation of this piece.
      */
@@ -93,15 +108,15 @@ enum class Piece(private val type: Int, private val symbol: String) {
     /**
      * Returns whether this piece is a king.
      */
-    fun isKing(): Boolean =  type % 6 == 5
+    fun isKing(): Boolean = type % 6 == 5
 
     /**
      * Returns whether this piece is white.
      */
-    fun isWhite(): Boolean = this.type <= 5
+    fun isWhite(): Boolean = color == WHITE
 
     /**
      * Returns whether this piece is black.
      */
-    fun isBlack(): Boolean = this.type >= 6
+    fun isBlack(): Boolean = color == WHITE
 }

@@ -8,13 +8,18 @@ import misc.square
 
 import board.Piece.*
 import board.Color.*
-import misc.BOARD_SIZE
 import misc.Debug
 import misc.Debug.Area.*
 import misc.FenString
-import misc.boardSquares
 
 class Board : ChessBoard {
+    companion object {
+        const val BOARD_SIZE = 64;
+        val boardSquares: IntRange = 0..63
+        private const val WHITE_PROMOTION_RANK = 8
+        private const val BLACK_PROMOTION_RANK = 0
+        private const val KING_CASTLE_DISTANCE = 2
+    }
 
     private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
