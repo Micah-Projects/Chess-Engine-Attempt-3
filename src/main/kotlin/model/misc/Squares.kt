@@ -1,6 +1,6 @@
 package model.misc
 import model.board.Board
-import model.board.Board.Companion.boardSquares
+
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -155,7 +155,7 @@ object Squares {
         return vectorBetween
     }
 
-    private fun isInBounds(square: square): Boolean = square in boardSquares
+    private fun isInBounds(square: square): Boolean = square in 0..63
 
     private fun assertInBounds(square: square, message: () -> String =
         { "Square cannot be handled as it is not in bounds: $square" } )

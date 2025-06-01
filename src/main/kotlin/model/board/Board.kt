@@ -17,14 +17,15 @@ import model.misc.start
 class Board : ChessBoard {
     companion object {
         const val BOARD_SIZE = 64;
-        val boardSquares: IntRange = 0..63
         private const val WHITE_PROMOTION_RANK = 8
         private const val BLACK_PROMOTION_RANK = 0
         private const val KING_CASTLE_DISTANCE = 2
     }
 
+    override val boardSquares =  0..63
     private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
+
 
     constructor() {
         bitBoards = Array<BitBoard>(12) { BitBoards.EMPTY_BB }
@@ -111,6 +112,7 @@ class Board : ChessBoard {
     }
 
     override fun fetchPiece(square: square): Piece {
+        if (square !in boardSquares) return EMPTY
         val end = 1uL shl square
         for (i in bitBoards.indices) {
             if (bitBoards[i] and end != 0uL) return Piece.from(i)

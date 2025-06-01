@@ -7,7 +7,10 @@ import model.misc.move
  * An interface for chess boards.
  */
 interface ChessBoard {
-
+    /**
+     * The range of squares the ChessBoard's Implementation
+     */
+    val boardSquares: IntRange
     /**
      * Adds a [piece] onto the given [square].
      * @param square The square index (0–63).
