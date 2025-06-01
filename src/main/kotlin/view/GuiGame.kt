@@ -82,6 +82,8 @@ class GuiGame : View{
     fun newGame() {
         focusBoard = Board()
         focusBoard.addPiece(Piece.random(), 27)
+        focusBoard.addPiece(Piece.random(), 27)
+        focusBoard.addPiece(Piece.random(), 27)
         println(focusBoard.textVisual())
     }
 

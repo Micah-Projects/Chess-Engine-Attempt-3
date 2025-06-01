@@ -3,6 +3,7 @@ import model.board.Board
 
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlin.random.Random
 
 
 /**
@@ -153,6 +154,14 @@ object Squares {
             else -> difference
         } * sign
         return vectorBetween
+    }
+
+    /**
+     * Gets a random square
+     * @return A random Int within the range 0 to 63 (inclusive)
+     */
+    fun random(): Int {
+        return Random.nextInt(0, 64)
     }
 
     private fun isInBounds(square: square): Boolean = square in 0..63
