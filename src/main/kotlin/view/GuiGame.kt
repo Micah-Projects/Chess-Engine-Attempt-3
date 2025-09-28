@@ -1,6 +1,7 @@
 package view
 
 import command.Move
+import command.Print
 import javafx.animation.AnimationTimer
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
@@ -81,9 +82,13 @@ class GuiGame : View{
     @FXML
     fun newGame() {
         focusBoard = Board()
-        focusBoard.addPiece(Piece.random(), 27)
-        focusBoard.addPiece(Piece.random(), 27)
-        focusBoard.addPiece(Piece.random(), 27)
+        focusBoard.addPiece(Piece.random(), Squares.random())
+        focusBoard.addPiece(WHITE_PAWN, Squares.valueOf("e2"))
+        focusBoard.addPiece(WHITE_PAWN, Squares.valueOf("d2"))
+        focusBoard.addPiece(BLACK_PAWN, Squares.valueOf("d7"))
+        focusBoard.addPiece(BLACK_PAWN, Squares.valueOf("e7"))
+        focusBoard.loadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        //focusBoard.addPiece(Piece.random(), Squares.valueOf())
         println(focusBoard.textVisual())
     }
 
@@ -130,6 +135,7 @@ class GuiGame : View{
             if (validMoveCriteria(clickedSquare, endSquare)) {
                 val move = Moves.encode(clickedSquare, endSquare)
                 Runner.receiveCommand(Move(move, focusBoard))
+                Runner.receiveCommand(Print(focusBoard))
             }
             clickedSquare = -1
 
@@ -216,7 +222,7 @@ class GuiGame : View{
 
     private fun drawPieceAt(piece: Piece, x: Double, y: Double) {
         if (!piece.isEmpty()) {
-            val image = Image(imageIndex[piece.get()])
+            val image = Image(imageIndex[piece.value])
             paintBrush.drawImage(
                 image,
                 x,

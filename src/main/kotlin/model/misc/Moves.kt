@@ -46,7 +46,7 @@ object Moves {
                 ((if (promotion) 1 else 0) shl PROMOTION_BIT) or
                 ((if (enpassant) 1 else 0) shl ENPASSANT_BIT) or
                 ((if (check) 1 else 0) shl CHECK_BIT) or
-                ((if (promotionType != Piece.EMPTY) promotionType else Piece.EMPTY).get() shl PROMOTION_TYPE_BIT)
+                ((if (promotionType != Piece.EMPTY) promotionType else Piece.EMPTY).value shl PROMOTION_TYPE_BIT)
     }
 
     fun addFlags(move: move, flags: Int = 0): move = (move) or  (flags shl FLAGS_BIT)

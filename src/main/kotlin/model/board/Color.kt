@@ -5,7 +5,7 @@ import model.misc.Debug
 /**
  * The colors for two chess players.
  */
-enum class Color(private val c: Int) {
+enum class Color(val value: Int) {
     WHITE(0),
     BLACK(1);
     companion object {
@@ -35,9 +35,18 @@ enum class Color(private val c: Int) {
         }
     }
 
-    /**
-     * Returns this color represented as an Int
-     */
-    fun get(): Int = c
+    val pawnStartRank: Int by lazy {
+        when (this) {
+            WHITE -> 1
+            BLACK -> 6
+        }
+    }
+
+    val promotionRank: Int by lazy {
+        when (this) {
+            WHITE -> 7
+            BLACK -> 0
+        }
+    }
 
 }

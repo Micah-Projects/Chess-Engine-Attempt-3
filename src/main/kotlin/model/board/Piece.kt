@@ -5,7 +5,7 @@ import model.misc.Debug
 /**
  * A chess piece.
  */
-enum class Piece(private val type: Int, private val symbol: String) {
+enum class Piece(val value: Int, val symbol: String) {
 
     EMPTY(-1, " "),
     WHITE_PAWN(0, "P"),
@@ -49,19 +49,8 @@ enum class Piece(private val type: Int, private val symbol: String) {
         }
     }
 
-    private val color: Color by lazy { if (isWhite()) Color.WHITE else Color.BLACK }
+    val color: Color by lazy { if (isWhite()) Color.WHITE else Color.BLACK }
 
-    /**
-     * returns the Int value which represents this piece.
-     */
-    fun get() = type
-
-    /**
-     * returns the color of this piece.
-     */
-    fun color(): Color {
-        return color
-    }
     /**
      * returns the String representation of this piece.
      */
@@ -70,50 +59,50 @@ enum class Piece(private val type: Int, private val symbol: String) {
     /**
      * Returns whether this piece is empty.
      */
-    fun isEmpty(): Boolean = type == -1
+    fun isEmpty(): Boolean = value == -1
 
     /**
      * Returns whether this piece is empty.
      */
-    fun isNotEmpty(): Boolean = type != -1
+    fun isNotEmpty(): Boolean = value != -1
 
     /**
      * Returns whether this piece is a pawn.
      */
-    fun isPawn(): Boolean = type % 6 == 0
+    fun isPawn(): Boolean = value % 6 == 0
 
     /**
      * Returns whether this piece is a knight.
      */
-    fun isKnight(): Boolean = type % 6 == 1
+    fun isKnight(): Boolean = value % 6 == 1
 
     /**
      * Returns whether this piece is a bishop.
      */
-    fun isBishop(): Boolean = type % 6 == 2
+    fun isBishop(): Boolean = value % 6 == 2
 
     /**
      * Returns whether this piece is a rook.
      */
-    fun isRook(): Boolean = type % 6 == 3
+    fun isRook(): Boolean = value % 6 == 3
 
     /**
      * Returns whether this piece is a queen.
      */
-    fun isQueen(): Boolean = type % 6 == 4
+    fun isQueen(): Boolean = value % 6 == 4
 
     /**
      * Returns whether this piece is a king.
      */
-    fun isKing(): Boolean = type % 6 == 5
+    fun isKing(): Boolean = value % 6 == 5
 
     /**
      * Returns whether this piece is white.
      */
-    fun isWhite(): Boolean = color == Color.WHITE
+    fun isWhite(): Boolean = value <= 5
 
     /**
      * Returns whether this piece is black.
      */
-    fun isBlack(): Boolean = color == Color.WHITE
+    fun isBlack(): Boolean = value >= 6
 }

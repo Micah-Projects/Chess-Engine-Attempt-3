@@ -17,15 +17,15 @@ import model.misc.start
 class Board : ChessBoard {
     companion object {
         const val BOARD_SIZE = 64;
-        private const val WHITE_PROMOTION_RANK = 8
-        private const val BLACK_PROMOTION_RANK = 0
+        private const val ROW_INCREMENT = 8
+        private const val COL_INCREMENT = 1
+
         private const val KING_CASTLE_DISTANCE = 2
     }
 
     override val boardSquares =  0..63
     private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
-
 
     constructor() {
         bitBoards = Array<BitBoard>(12) { BitBoards.EMPTY_BB }
@@ -40,19 +40,20 @@ class Board : ChessBoard {
     override fun addPiece(piece: Piece, square: square) {
         require(isInBounds(square)) { "Cannot add piece on out-of-bounds square: $square " }
         if (piece.isEmpty()) return
-        val i = piece.get()
+        val i = piece.value
         val targetBB = bitBoards[i]
         for (bb in bitBoards.indices) {
             bitBoards[bb] = BitBoards.removeBit(bitBoards[bb], square)
         }
         bitBoards[i] = BitBoards.addBit(targetBB, square)
-        Debug.log(Debug.Area.BOARD) { "$piece added on $square (${Squares.asText(square)})" }
+        Debug.log(BOARD) { "$piece added on $square (${Squares.asText(square)})" }
     }
 
     override fun removePiece(square: square) {
         require(isInBounds(square)) { "Cannot remove piece on out-of-bounds square: $square " }
         for (i in bitBoards.indices) {
             bitBoards[i] = BitBoards.removeBit(bitBoards[i], square)
+            // questionable code below
             if (bitBoards[i] != BitBoards.removeBit(bitBoards[i], square)) {
                 Debug.log(Debug.Area.BOARD) { "${Piece.from(i)} added on $square -> ${Squares.asText(square)}" }
             }
@@ -79,30 +80,66 @@ class Board : ChessBoard {
 
      */
 
+    override fun makeMove(move: move) {
+        movePiece(move.start(), move.end(), move.getPromotion())
+    }
+
     override fun movePiece(start: square, end: square) {
         movePiece(start, end, EMPTY)
     }
 
     private fun movePiece(start: square, end: square, promotion: Piece = EMPTY) {
         val piece = fetchPiece(start)
-        val promotion = if (piece.isPawn() && promotion.isEmpty()) defaultPromotion(piece.color()) else promotion
         require(piece.isNotEmpty()) { "No piece found on square: $start." }
         require(isInBounds(start)) { "Start square: $start isn't in bounds." }
         require(isInBounds(end)) { "end square: $end isn't in bounds." }
-        require(start != end) { "board.Piece cannot null-move: $start -> $end" }
+        require(start != end) { "Piece cannot null-move: $start -> $end" }
 
-        removePiece(start)
-        addPiece(piece, end)
+        val promotion = if (piece.isPawn() && promotion.isEmpty()) defaultPromotion(piece.color) else promotion
+
+        if (piece.isPawn() || piece.isKing()) {
+            handleSpecialMovement(piece, start, end)
+        } else {
+            enpassantSquare = null
+            removePiece(start)
+            addPiece(piece, end)
+        }
+
 
         Debug.log(BOARD) {
             "$piece moved from $start -> $end : ${Squares.asText(start)} -> ${Squares.asText(end)}"
         }
     }
 
+    /*
+     * Write tests for this
+     */
+    private fun handleSpecialMovement(piece: Piece, start: square, end: square) {
+        if (piece.isPawn()) {
+            val squareBehind = squareBehind(end, piece.color)
 
-    override fun makeMove(move: move) {
-        movePiece(move.start(), move.end(), move.getPromotion())
+            // set enpassant
+            if (Squares.rankIs(start, piece.color.pawnStartRank) && Squares.rankDist(start, end) == 2) {
+                enpassantSquare = end
+            }
+
+            // capture enpassant
+            if (Squares.isOnDiagonal(start, end) && fetchPiece(end).isEmpty() && squareBehind == enpassantSquare) {
+                removePiece(squareBehind)
+            }
+        }
+
+        removePiece(start)
+        addPiece(piece, end)
     }
+
+
+    private fun squareBehind(start: square, color: Color): Int {
+        return start + (ROW_INCREMENT * color.enemy.pawnDirection)
+    }
+
+
+
 
     private fun defaultPromotion(color: Color): Piece {
         return when (color) {
@@ -122,7 +159,7 @@ class Board : ChessBoard {
 
     override fun fetchPieceBitBoard(pieceType: Piece): BitBoard {
         require(pieceType.isNotEmpty()) { "There is no bit board for ${Piece.EMPTY}." }
-        return bitBoards[pieceType.get()]
+        return bitBoards[pieceType.value]
     }
 
     override fun fetchEnpassantSquare(): square? {
@@ -210,7 +247,7 @@ class Board : ChessBoard {
         board.append("   +---+---+---+---+---+---+---+---+   \n")
         line.append("|")
         for (s in (BOARD_SIZE - 1).downTo(0)) {
-            var piece =  fetchPiece(s)
+            val piece = fetchPiece(s)
             line.append(" ${piece.symbol()} |")
             if (Squares.fileIs(s, 0)) {
                 line.append(" ${Squares.rankOf(s) + 1}")
