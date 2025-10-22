@@ -9,6 +9,7 @@ enum class Color(val value: Int) {
     WHITE(0),
     BLACK(1);
     companion object {
+        const val COUNT = 2
         /**
          * Returns the piece represented by [value]
          * @param value The number associated with a chess piece color. 0 -> White, 1 -> Black.

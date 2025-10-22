@@ -32,27 +32,27 @@ object Moves {
     fun encode(startSquare: Int, endSquare: Int, flags: Int = 0): move {
         return (startSquare shl START_SQUARE_BIT) or (endSquare shl END_SQUARE_BIT) or (flags shl FLAGS_BIT)
     }
-
+// use jvmInline
     fun encodeFlags(
         capture: Boolean = false,
         castle: Boolean = false,
         promotion: Boolean = false,
         enpassant: Boolean = false,
         check: Boolean  = false,
-        promotionType: Piece = Piece.EMPTY
+        promotionType: Piece.Type = Piece.Type.NONE
     ): Int {
         return ((if (capture) 1 else 0) shl CAPTURE_BIT) or
                 ((if (castle) 1 else 0) shl CASTLE_BIT) or
                 ((if (promotion) 1 else 0) shl PROMOTION_BIT) or
                 ((if (enpassant) 1 else 0) shl ENPASSANT_BIT) or
                 ((if (check) 1 else 0) shl CHECK_BIT) or
-                ((if (promotionType != Piece.EMPTY) promotionType else Piece.EMPTY).value shl PROMOTION_TYPE_BIT)
+                ((if (promotionType != Piece.Type.NONE) promotionType else Piece.Type.NONE).value shl PROMOTION_TYPE_BIT)
     }
 
     fun addFlags(move: move, flags: Int = 0): move = (move) or  (flags shl FLAGS_BIT)
     fun addPromotionType(flags: Int, type: Int): Int = flags or (type shl PROMOTION_TYPE_BIT)
     fun addIfCheck(flags: Int, isCheck: Boolean): Int = flags or ( (if (isCheck) 1 else 0) shl CHECK_BIT)
-    fun getPromotionType(flags: Int): Int = (flags and START_SQUARE_SELECTOR) shr START_SQUARE_BIT
+    fun getPromotionType(flags: Int): Int = (flags and PROMOTION_TYPE_FLAG) shr START_SQUARE_BIT
 }
 
 fun move.start(): Int = (this and START_SQUARE_SELECTOR) shr START_SQUARE_BIT

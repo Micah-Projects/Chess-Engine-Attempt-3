@@ -8,11 +8,11 @@ import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.stage.Stage
-import model.board.ChessBoard
+import model.board.MutableChessBoard
 
 import kotlin.jvm.javaClass
 
-class GuiMenu : Application(), View {
+class GuiMenu : Application() {
 
     @FXML
     private lateinit var stage: Stage
@@ -58,7 +58,7 @@ class GuiMenu : Application(), View {
         primaryStage?.show()
     }
 
-    override fun viewBoard(board: ChessBoard) {
-        // Do nothing
-    }
+//    override fun viewBoard(board: ChessBoard) {
+//        // Do nothing
+//    }
 }

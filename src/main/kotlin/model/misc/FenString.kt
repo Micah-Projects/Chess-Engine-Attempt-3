@@ -7,7 +7,7 @@ import kotlin.text.split
  * A class which parses and represents chess FEN notation.
  * If information isn't correct, values will be absent or assumed to not be present.
  */
-class FenString(fen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
+class FenString(val fen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
 
     init {
         require(fen.isNotEmpty()) { "Fen string cannot be empty." }

@@ -5,25 +5,47 @@ import model.misc.Debug
 /**
  * A chess piece.
  */
-enum class Piece(val value: Int, val symbol: String) {
+enum class Piece(val value: Int, val type: Type, val symbol: String) {
 
-    EMPTY(-1, " "),
-    WHITE_PAWN(0, "P"),
-    WHITE_KNIGHT(1, "N"),
-    WHITE_BISHOP(2, "B"),
-    WHITE_ROOK(3, "R"),
-    WHITE_QUEEN(4, "Q"),
-    WHITE_KING(5, "K"),
+    EMPTY(-1, Type.NONE," "),
+    WHITE_PAWN(0, Type.PAWN, "P"),
+    WHITE_KNIGHT(1, Type.KNIGHT, "N"),
+    WHITE_BISHOP(2, Type.BISHOP, "B"),
+    WHITE_ROOK(3, Type.ROOK,"R"),
+    WHITE_QUEEN(4, Type.QUEEN, "Q"),
+    WHITE_KING(5, Type.KING,"K"),
 
-    BLACK_PAWN(6, "p"),
-    BLACK_KNIGHT(7, "n"),
-    BLACK_BISHOP(8, "b"),
-    BLACK_ROOK(9, "r"),
-    BLACK_QUEEN(10, "q"),
-    BLACK_KING(11, "k");
+    BLACK_PAWN(6, Type.PAWN,"p"),
+    BLACK_KNIGHT(7, Type.KNIGHT,"n"),
+    BLACK_BISHOP(8, Type.BISHOP,"b"),
+    BLACK_ROOK(9, Type.ROOK,"r"),
+    BLACK_QUEEN(10, Type.QUEEN,"q"),
+    BLACK_KING(11, Type.KING,"k");
+
+    enum class Type(val value: Int) {
+        NONE(-1),
+        PAWN(0),
+        KNIGHT(1),
+        BISHOP(2),
+        ROOK(3),
+        QUEEN(4),
+        KING(5);
+
+        companion object {
+            val playable = entries.toTypedArray().copyOfRange(1, entries.size)
+            val promotions = entries.toTypedArray().copyOfRange(1, entries.size - 1)
+        }
+    }
 
     companion object {
+        const val COUNT = 12
+        const val SLIDER_COUNT = 3 // because each piece including color is distinct
+        const val LEAPER_COUNT = 2
+        const val TYPES = 6
         val playable = entries.toTypedArray().copyOfRange(1, entries.size)
+        val sliders = listOf<Type>(Type.BISHOP, Type.ROOK, Type.QUEEN)
+        val leapers = listOf(Type.KNIGHT, Type.KING)
+
         fun from(index: Int): Piece = playable[index]
 
         /**
@@ -69,32 +91,32 @@ enum class Piece(val value: Int, val symbol: String) {
     /**
      * Returns whether this piece is a pawn.
      */
-    fun isPawn(): Boolean = value % 6 == 0
+    fun isPawn(): Boolean = type == Type.PAWN
 
     /**
      * Returns whether this piece is a knight.
      */
-    fun isKnight(): Boolean = value % 6 == 1
+    fun isKnight(): Boolean = type == Type.KNIGHT
 
     /**
      * Returns whether this piece is a bishop.
      */
-    fun isBishop(): Boolean = value % 6 == 2
+    fun isBishop(): Boolean = type == Type.BISHOP
 
     /**
      * Returns whether this piece is a rook.
      */
-    fun isRook(): Boolean = value % 6 == 3
+    fun isRook(): Boolean = type == Type.ROOK
 
     /**
      * Returns whether this piece is a queen.
      */
-    fun isQueen(): Boolean = value % 6 == 4
+    fun isQueen(): Boolean = type == Type.QUEEN
 
     /**
      * Returns whether this piece is a king.
      */
-    fun isKing(): Boolean = value % 6 == 5
+    fun isKing(): Boolean = type == Type.KING
 
     /**
      * Returns whether this piece is white.
@@ -105,4 +127,8 @@ enum class Piece(val value: Int, val symbol: String) {
      * Returns whether this piece is black.
      */
     fun isBlack(): Boolean = value >= 6
+
+    fun isSlider(): Boolean = isBishop() || isQueen() || isRook()
+
+    fun isLeaper(): Boolean = isKing() || isKnight()
 }

@@ -14,16 +14,13 @@ import model.misc.move
 import model.misc.square
 import model.misc.start
 
-class Board : ChessBoard {
+class Board : MutableChessBoard {
     companion object {
-        const val BOARD_SIZE = 64;
         private const val ROW_INCREMENT = 8
         private const val COL_INCREMENT = 1
-
         private const val KING_CASTLE_DISTANCE = 2
     }
 
-    override val boardSquares =  0..63
     private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
 
@@ -76,8 +73,6 @@ class Board : ChessBoard {
           Kings need to...
             - move two squares horizontally
             - move the corresponding rook to its opposite side
-
-
      */
 
     override fun makeMove(move: move) {
@@ -105,7 +100,6 @@ class Board : ChessBoard {
             addPiece(piece, end)
         }
 
-
         Debug.log(BOARD) {
             "$piece moved from $start -> $end : ${Squares.asText(start)} -> ${Squares.asText(end)}"
         }
@@ -115,24 +109,26 @@ class Board : ChessBoard {
      * Write tests for this
      */
     private fun handleSpecialMovement(piece: Piece, start: square, end: square) {
+        val color = piece.color
         if (piece.isPawn()) {
-            val squareBehind = squareBehind(end, piece.color)
+            val behindMe = squareBehind(end, color)
 
             // set enpassant
-            if (Squares.rankIs(start, piece.color.pawnStartRank) && Squares.rankDist(start, end) == 2) {
-                enpassantSquare = end
-            }
+           if (Squares.rankIs(start, color.pawnStartRank) && Squares.rankDist(start, end) == 2) {
+               enpassantSquare = behindMe
+               // capture enpassant
+           }  else if (Squares.isOnDiagonal(start, end) && fetchPiece(end).isEmpty() && end == enpassantSquare) {
+                removePiece(behindMe)
+               // if not setting, or capturing, clear it
+           } else {
+               enpassantSquare = null
+           }
 
-            // capture enpassant
-            if (Squares.isOnDiagonal(start, end) && fetchPiece(end).isEmpty() && squareBehind == enpassantSquare) {
-                removePiece(squareBehind)
-            }
         }
 
         removePiece(start)
         addPiece(piece, end)
     }
-
 
     private fun squareBehind(start: square, color: Color): Int {
         return start + (ROW_INCREMENT * color.enemy.pawnDirection)
@@ -149,7 +145,7 @@ class Board : ChessBoard {
     }
 
     override fun fetchPiece(square: square): Piece {
-        if (square !in boardSquares) return EMPTY
+        if (square !in Squares.range) return EMPTY
         val end = 1uL shl square
         for (i in bitBoards.indices) {
             if (bitBoards[i] and end != 0uL) return Piece.from(i)
@@ -162,13 +158,29 @@ class Board : ChessBoard {
         return bitBoards[pieceType.value]
     }
 
+    override fun getOccupancy(color: Color?): ULong {
+        var result = 0uL
+        when (color) {
+            WHITE -> for (i in 0..5) result = result or bitBoards[i]
+            BLACK -> for (i in 6..11) result = result or bitBoards[i]
+            else  -> for (bb in bitBoards) result = result or bb
+        }
+        return result
+    }
+
+    override fun fetchEmptySquares(): ULong {
+        var result = 0uL
+        for (bb in bitBoards) result = bb or result
+        return result.inv()
+    }
+
     override fun fetchEnpassantSquare(): square? {
         return enpassantSquare
     }
 
-    private fun isInBounds(square: square) = square in boardSquares
+    private fun isInBounds(square: square) = square in Squares.range
 
-    override fun clone(): ChessBoard {
+    override fun clone(): MutableChessBoard {
         return Board(bitBoards, enpassantSquare)
     }
 
@@ -181,7 +193,7 @@ class Board : ChessBoard {
 
     private fun loadEasyBoard(ezBoard: String) {
         clear()
-        for (square in boardSquares) {
+        for (square in Squares.range) {
             val piece = Piece.fromSymbol(ezBoard[square].toString())
             addPiece(piece, square)
         }
@@ -213,7 +225,7 @@ class Board : ChessBoard {
         val fen = StringBuilder()
         var segment = StringBuilder()
         var counter = 0
-        for (square in boardSquares) {
+        for (square in Squares.range) {
            val piece = fetchPiece(square)
             when (piece) {
                 Piece.EMPTY -> counter++
@@ -246,7 +258,7 @@ class Board : ChessBoard {
         board.append(letters + "\n")
         board.append("   +---+---+---+---+---+---+---+---+   \n")
         line.append("|")
-        for (s in (BOARD_SIZE - 1).downTo(0)) {
+        for (s in (Squares.COUNT- 1).downTo(0)) {
             val piece = fetchPiece(s)
             line.append(" ${piece.symbol()} |")
             if (Squares.fileIs(s, 0)) {
@@ -259,5 +271,9 @@ class Board : ChessBoard {
         }
         board.append(letters)
         return if (viewFrom == Color.WHITE) board.toString() else board.toString().reversed()
+    }
+
+    override fun toMutable(): MutableChessBoard {
+        return this.clone()
     }
 }

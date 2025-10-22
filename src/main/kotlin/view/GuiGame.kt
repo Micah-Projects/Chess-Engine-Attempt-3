@@ -1,7 +1,7 @@
 package view
-
-import command.Move
-import command.Print
+import command.MakeMove
+import command.PrintBoard
+import controller.Controller
 import javafx.animation.AnimationTimer
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
@@ -17,9 +17,14 @@ import javafx.scene.text.Font
 import javafx.stage.Stage
 import model.board.Board
 import model.board.ChessBoard
+import model.board.Color
+import model.board.MutableChessBoard
 import model.board.Piece.*
 import model.misc.Squares
 import model.board.Piece
+import model.board.ReadOnlyBoard
+import model.game.ChessGame
+import model.game.Game
 import model.misc.Moves
 import model.misc.square
 
@@ -27,10 +32,19 @@ import kotlin.jvm.javaClass
 import kotlin.to
 
 
-class GuiGame : View{
-    companion object {
+class GuiGame  {
+    companion object : View {
         private const val SQUARE_DIMENSION = 67.5
+        private var viewBoard = ReadOnlyBoard(Board()) // place holding
+
+        override fun viewBoard(board: ChessBoard) {
+            this.viewBoard = ReadOnlyBoard(board)
+        }
+
+        var highlights = listOf<Int>()
+        var orientation = model.board.Color.WHITE
     }
+
 
     @FXML
     private lateinit var canvas: Canvas
@@ -44,13 +58,13 @@ class GuiGame : View{
     private lateinit var root: Parent
     private lateinit var paintBrush: GraphicsContext
 
-    private var squarePositions = (Array(8) { Array(8) { Pair(0.0, 0.0) } })
+    private var squarePositions = Array(8) { col -> Array(8) { row -> Pair(col * SQUARE_DIMENSION, row * SQUARE_DIMENSION) } }
     private var mouseX = -1.0
     private var mouseY = -1.0
 
-    private var orientation = WHITE
-    private var focusBoard: ChessBoard = Board()
+
     private var clickedSquare = -1
+
 
     val imageIndex = mapOf<Int, String>(
         0 to "Piece Images 2/White Pawn.png",
@@ -81,15 +95,17 @@ class GuiGame : View{
 
     @FXML
     fun newGame() {
-        focusBoard = Board()
-        focusBoard.addPiece(Piece.random(), Squares.random())
-        focusBoard.addPiece(WHITE_PAWN, Squares.valueOf("e2"))
-        focusBoard.addPiece(WHITE_PAWN, Squares.valueOf("d2"))
-        focusBoard.addPiece(BLACK_PAWN, Squares.valueOf("d7"))
-        focusBoard.addPiece(BLACK_PAWN, Squares.valueOf("e7"))
-        focusBoard.loadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+//        focusBoard = Board()
+//        focusBoard.addPiece(Piece.random(), Squares.random())
+//        focusBoard.addPiece(WHITE_PAWN, Squares.valueOf("e2"))
+//        focusBoard.addPiece(WHITE_PAWN, Squares.valueOf("d2"))
+//        focusBoard.addPiece(BLACK_PAWN, Squares.valueOf("d7"))
+//        focusBoard.addPiece(BLACK_PAWN, Squares.valueOf("e7"))
+     //   val gen: MoveGenerator = BitBoardMoveGenerator()
+       // focusBoard.loadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         //focusBoard.addPiece(Piece.random(), Squares.valueOf())
-        println(focusBoard.textVisual())
+       // println(focusBoard.textVisual())
+        Controller.startNewGame()
     }
 
     @FXML
@@ -99,28 +115,35 @@ class GuiGame : View{
 
     @FXML
     fun parseCommand() {
-
+        orientation == orientation.enemy
     }
 
     @Override
     fun initialize() {
-        setSquarePositions()
         paintBrush = canvas.graphicsContext2D
         val refreshRate = object : AnimationTimer() {
             private var lastUpdate = 0L
+            val secondNanos = 1_000_000_000
+            val rate = secondNanos / 40
             override fun handle(now: Long) {
-                if (now - lastUpdate >= 20_000_000) {
+                if (now - lastUpdate >= rate) {
                     lastUpdate = now
                     refreshBoard()
                 }
             }
         }
         refreshRate.start()
+        events()
 
+    }
+
+    fun events() {
         canvas.setOnMousePressed { e ->
             mouseX = e.x - SQUARE_DIMENSION / 2
             mouseY = e.y - SQUARE_DIMENSION / 2
-            clickedSquare = convertPairToIntSquare(adjustForOrientation(getSquareFromPixels(e.x, e.y)))
+
+            clickedSquare = convertPairToIntSquare( adjustForOrientation(getSquareFromPixels(e.x, e.y)))
+            Controller.setHighlights(clickedSquare)
 
         }
 
@@ -131,30 +154,12 @@ class GuiGame : View{
 
         canvas.setOnMouseReleased { e ->
             val endSquare = convertPairToIntSquare(adjustForOrientation(getSquareFromPixels(e.x, e.y)))
-
-            if (validMoveCriteria(clickedSquare, endSquare)) {
-                val move = Moves.encode(clickedSquare, endSquare)
-                Runner.receiveCommand(Move(move, focusBoard))
-                Runner.receiveCommand(Print(focusBoard))
-            }
+            Controller.clearHighlights()
+            Controller.safeTryMove(clickedSquare, endSquare)
             clickedSquare = -1
-
         }
     }
-
-    private fun validMoveCriteria(start: square, end: square): Boolean =
-        start in focusBoard.boardSquares
-            && end in focusBoard.boardSquares
-            && end != start
-            && focusBoard.fetchPiece(clickedSquare) != EMPTY
-
-    private fun setSquarePositions() {
-        squarePositions.forEachIndexed { row, array ->
-            array.indices.forEach { col ->
-                squarePositions[row][col] = Pair(col * SQUARE_DIMENSION, row * SQUARE_DIMENSION)
-            }
-        }
-    }
+    // for now
 
     private fun refreshBoard() {
         renderSquares()
@@ -163,59 +168,70 @@ class GuiGame : View{
     }
 
     private fun renderSquares() {
-        for (s in 0..63) {
-            val square = Squares.asCoord(s)
-            val col = Squares.fileOf(s)
-            val row = 7 - Squares.rankOf(s)
+        for (rank in 0 until Squares.NUM_RANKS) {
+            /// Squares.NUM_FILES - 1 downTo  0
+            for (file in 0 until Squares.NUM_FILES) {
+                val sq = Squares.fromFileRank(file, rank)
 
-            // Set square colors
-            paintBrush.fill = when ((col + row) % 2) {
-                0 -> web("#D5AB6D")
-                else -> web("#E9D4B4")
+                // Set square colors
+                paintBrush.fill = when ((file + rank) % 2) {
+                    0 -> web("#D5AB6D")
+                    else -> web("#E9D4B4")
+                }
+                drawSquare(file, rank)
+
+                // draw move squares of piece
+                if (sq in highlights) {
+                    paintBrush.fill = web("#7DAFB5", 0.61)
+                    drawSquare(file, rank) //
+                }
             }
-            drawSquare(square)
         }
     }
 
-    private fun drawSquare(position: Pair<Int, Int>) {
-        val adjusted = adjustForOrientation(position)
+    fun drawSquare(file: Int, rank: Int) {
+        drawSquare(Squares.fromFileRank(file, rank))
+    }
+
+    private fun drawSquare(square: square) {
+        val oriented = orient(square)
         paintBrush.fillRect(
-            adjusted.first * SQUARE_DIMENSION,
-            adjusted.second * SQUARE_DIMENSION,
+            Squares.fileOf(oriented) * SQUARE_DIMENSION,
+            Squares.rankOf(oriented) * SQUARE_DIMENSION,
             SQUARE_DIMENSION,
             SQUARE_DIMENSION
         )
     }
 
     private fun renderPieces() {
-        for (square in 0.until(64)) {
-            val position = adjustForOrientation(Squares.asCoord(square)) //
-            val x = scaleNumberToScreen(7 - position.first)
-            val y = scaleNumberToScreen(position.second)
+        for (square in Squares.range) {
+            val s = orient(square)
+            val x = Squares.fileOf(s) * SQUARE_DIMENSION
+            val y = Squares.rankOf(s) * SQUARE_DIMENSION
 
             if (square != clickedSquare) {
-                drawPieceAt(focusBoard.fetchPiece(square), x, y)
+                drawPieceAt(viewBoard.fetchPiece(square), x, y)
             }
         }
-        drawPieceAt(focusBoard.fetchPiece(clickedSquare), mouseX, mouseY) // for layering
+            drawPieceAt(viewBoard.fetchPiece(clickedSquare), mouseX, mouseY) // for layering
 
     }
 
     private fun renderSquareVisuals() {
-        for (s in focusBoard.boardSquares) {
-            val row = Squares.rankOf(s)
-            val col = 7 - Squares.fileOf(s)
-            paintBrush.fill = when ((col + row) % 2) {
-                0 -> web("#D5AB6D")
-                else -> web("#E9D4B4")
+        for (rank in 0 until Squares.NUM_RANKS) {
+            for (file in 0 until Squares.NUM_FILES) {
+               // val oriented = orient(s)
+                paintBrush.fill = when ((file + rank) % 2) {
+                    0 -> web("#D5AB6D")
+                    else -> web("#E9D4B4")
+                }
+                paintBrush.font = Font(20.0)
+                paintBrush.fillText(
+                    Squares.asText(orient(Squares.fromFileRank(file, rank))),
+                    (file * SQUARE_DIMENSION + 0.5 * SQUARE_DIMENSION) - 10.0,
+                    (rank * SQUARE_DIMENSION + 0.5 * SQUARE_DIMENSION) + 10.0
+                )
             }
-            paintBrush.font = Font(20.0)
-            val newpos = adjustForOrientation(Pair(col, row))
-            paintBrush.fillText(
-                Squares.asText(s),
-                (newpos.first * SQUARE_DIMENSION + 0.5 * SQUARE_DIMENSION) - 10.0,
-                ((newpos.second * SQUARE_DIMENSION + 0.5 * SQUARE_DIMENSION)) + 10.0
-            )
         }
 
     }
@@ -234,12 +250,14 @@ class GuiGame : View{
 
     }
 
-    private fun scaleNumberToScreen(number: Int): Double {
-        return number.toDouble() * SQUARE_DIMENSION
+    private fun adjustForOrientation(coords: Pair<Int, Int>): Pair<Int, Int> {
+        return if (orientation == Color.WHITE) Pair(coords.first, 7 - coords.second) else coords
     }
 
-    private fun adjustForOrientation(coords: Pair<Int, Int>): Pair<Int, Int> {
-        return if (orientation == WHITE) Pair(7 - coords.first, 7 - coords.second) else coords
+    private fun orient(square: square): square {
+        val rank = Squares.rankOf(square)
+        val file = Squares.fileOf(square)
+       return if (orientation == Color.WHITE)  Squares.fromFileRank(file,  7 - rank) else square
     }
 
     private fun getSquareFromPixels(x: Double, y: Double): Pair<Int, Int> {
@@ -250,7 +268,7 @@ class GuiGame : View{
                     y >= it.second + offset && y < it.second + SQUARE_DIMENSION - offset
                 ) {
                     return Pair(
-                        (7 - it.first / SQUARE_DIMENSION).toInt(),
+                        (it.first / SQUARE_DIMENSION).toInt(),
                         (it.second / SQUARE_DIMENSION).toInt()
                     )
                 }
@@ -266,9 +284,7 @@ class GuiGame : View{
         return if (x in 0..8 && y in 0..8) (y * 8 + x) else -1
     }
 
-    override fun viewBoard(board: ChessBoard) {
-        this.focusBoard = board
-    }
+
 
 }
 
