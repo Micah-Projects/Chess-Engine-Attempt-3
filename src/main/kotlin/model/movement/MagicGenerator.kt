@@ -1,10 +1,8 @@
 package model.movement
 
 import model.board.Piece
-import model.misc.BitBoard
 import model.misc.BitBoards.binaryFill
 import model.misc.Squares
-import model.misc.square
 import java.io.File
 import kotlin.random.Random
 import kotlin.random.nextULong
@@ -13,7 +11,7 @@ import kotlin.system.exitProcess
 
 object MagicGenerator {
 val mgSliders = 2
-    private val filePath = "src/main/kotlin/model/movement/MagicKeys.txt"
+    private const val FILE_PATH = "src/main/kotlin/model/movement/MagicKeys.txt"
     private var hasCache = false
     private var currentCache: Array<Array<ULong>> = Array(0) { Array(0) { 0uL } }
 
@@ -27,7 +25,7 @@ val mgSliders = 2
     }
 
     private fun readMagics(): Array<Array<ULong>> {
-        val file = File(filePath)
+        val file = File(FILE_PATH)
         require(file.exists()) {
             "Cannot retrieve magic keys. Must call genMagics() first."
         }
@@ -46,7 +44,7 @@ val mgSliders = 2
 
     fun genMagics() {
         try {
-            val file = File(filePath)
+            val file = File(FILE_PATH)
             if (file.exists()) {
                 return
             } else {

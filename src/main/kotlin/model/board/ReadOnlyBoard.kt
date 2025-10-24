@@ -1,6 +1,7 @@
 package model.board
 
 import model.misc.BitBoard
+import model.movement.CastleRights
 
 class ReadOnlyBoard(private val board: ChessBoard) : ChessBoard {
 
@@ -14,6 +15,10 @@ class ReadOnlyBoard(private val board: ChessBoard) : ChessBoard {
 
     override fun getOccupancy(color: Color?): ULong {
         return board.getOccupancy(color)
+    }
+
+    override fun getCastleRights(): CastleRights {
+        return board.getCastleRights()
     }
 
     override fun fetchEmptySquares(): ULong {

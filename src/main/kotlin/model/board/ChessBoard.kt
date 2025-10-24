@@ -1,6 +1,7 @@
 package model.board
 
 import model.misc.BitBoard
+import model.movement.CastleRights
 
 interface ChessBoard {
 
@@ -21,6 +22,11 @@ interface ChessBoard {
      * If color is null, the entire occupancy is retrieved.
      */
     fun getOccupancy(color: Color? = null): ULong
+
+    /**
+     * @return the current castling rights of the board.
+     */
+    fun getCastleRights(): CastleRights
 
     /**
      * @return a [BitBoard] representing all empty squares on the board.

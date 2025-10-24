@@ -23,7 +23,7 @@ class BitBoardMoveGenerator : MoveGenerator {
     private val pawnAttackMasks = Array<Array<ULong>>(Color.COUNT) { color ->
         val directions = if (color == 0) RayCrawler.pawnAttacks else RayCrawler.pawnAttacks.map { -it }
         Array(Squares.COUNT) { square ->
-            RayCrawler.leap(square, directions).also { BitBoards.print(it) }
+            RayCrawler.leap(square, directions)
         }
     }
 

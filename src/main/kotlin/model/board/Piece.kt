@@ -47,6 +47,9 @@ enum class Piece(val value: Int, val type: Type, val symbol: String) {
         val leapers = listOf(Type.KNIGHT, Type.KING)
 
         fun from(index: Int): Piece = playable[index]
+        fun from(type: Type, color: Color): Piece {
+            return from(type.value + color.value * this.TYPES)
+        }
 
         /**
          * Returns a random playable piece.

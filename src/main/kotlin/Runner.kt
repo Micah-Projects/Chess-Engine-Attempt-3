@@ -11,7 +11,7 @@ object Runner {
     // this is dummy code, Ideally I'd like to have a structure which is well suited for tasks
     fun startUp() {
         running = true
-        MagicGenerator.genMagics()
+        //MagicGenerator.genMagics() // call if 'MagicKeys' is missing
         Thread {
             javafx.application.Application.launch(GuiMenu::class.java)
         }.start()

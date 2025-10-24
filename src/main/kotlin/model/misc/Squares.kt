@@ -16,6 +16,9 @@ typealias square = Int
  */
 object Squares {
     const val BOARD_AXIS_LENGTH = 8
+    const val ROW_INCREMENT = 8
+    const val COL_INCREMENT = 1
+    const val KING_CASTLE_DISTANCE = 2
     const val COUNT = 64
     const val NUM_FILES = 8
     const val NUM_RANKS = 8
@@ -157,6 +160,8 @@ object Squares {
      * Returns true if the [square] is on any of the 4 edges of the board.
      */
     fun isOnEdge(square: square) = fileOf(square) == 0 || fileOf(square) == 7 || rankOf(square) == 0 || rankOf(square) == 7
+
+    fun isCorner(square: square) = (fileOf(square) == 0 || fileOf(square) == 7) && (rankOf(square) == 0 || rankOf(square) == 7)
 
     /**
      * Returns true if the [square] is on a side edge

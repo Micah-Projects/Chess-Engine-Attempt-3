@@ -13,25 +13,24 @@ import model.misc.getPromotion
 import model.misc.move
 import model.misc.square
 import model.misc.start
+import model.movement.CastleRights
+import kotlin.math.abs
 
 class Board : MutableChessBoard {
-    companion object {
-        private const val ROW_INCREMENT = 8
-        private const val COL_INCREMENT = 1
-        private const val KING_CASTLE_DISTANCE = 2
-    }
 
     private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
+    private var castleRights = CastleRights.FULL
 
     constructor() {
-        bitBoards = Array<BitBoard>(12) { BitBoards.EMPTY_BB }
+        bitBoards = Array<BitBoard>(Piece.COUNT) { BitBoards.EMPTY_BB }
         enpassantSquare = null
     }
 
-    private constructor(bitboards: Array<BitBoard>, enpassantSquare: square?) {
+    private constructor(bitboards: Array<BitBoard>, enpassantSquare: square?, castleRights: CastleRights) {
         this.bitBoards = bitboards.clone()
         this.enpassantSquare = enpassantSquare
+        this.castleRights = castleRights
     }
 
     override fun addPiece(piece: Piece, square: square) {
@@ -58,22 +57,6 @@ class Board : MutableChessBoard {
 
     }
 
-    /*
-        - Needs to support Enpassant:
-          Pawns need to...
-            - update the enpassant square
-            - move diagonally
-            - remove the pawn behind its capture square
-
-        - Needs to support promotions
-          Pawns need to...
-            - replace itself with a promotion when on its respective promotion rank
-
-        - Needs to support Castling:
-          Kings need to...
-            - move two squares horizontally
-            - move the corresponding rook to its opposite side
-     */
 
     override fun makeMove(move: move) {
         movePiece(move.start(), move.end(), move.getPromotion())
@@ -91,6 +74,8 @@ class Board : MutableChessBoard {
         require(start != end) { "Piece cannot null-move: $start -> $end" }
 
         val promotion = if (piece.isPawn() && promotion.isEmpty()) defaultPromotion(piece.color) else promotion
+        if (piece.isRook()) invalidateCastleRights(start)  // rook moves
+        invalidateCastleRights(end) // rook captured (potentially)
 
         if (piece.isPawn() || piece.isKing()) {
             handleSpecialMovement(piece, start, end)
@@ -105,37 +90,72 @@ class Board : MutableChessBoard {
         }
     }
 
+    private fun invalidateCastleRights(square: square) {
+        when (square) {
+            // squares.valueOf() is more expressive here, but slower
+            0 -> castleRights = castleRights.without(CastleRights.WHITE_QS) // a1
+            7 -> castleRights = castleRights.without(CastleRights.WHITE_KS) // h1
+            56 -> castleRights = castleRights.without(CastleRights.BLACK_QS)// a8
+            63 -> castleRights = castleRights.without(CastleRights.BLACK_KS)// h8
+        }
+    }
+
     /*
      * Write tests for this
      */
     private fun handleSpecialMovement(piece: Piece, start: square, end: square) {
         val color = piece.color
-        if (piece.isPawn()) {
-            val behindMe = squareBehind(end, color)
+        when {
+            piece.isPawn() -> {
+                val behindMe = squareBehind(end, color)
+                // set enpassant
+                if (Squares.rankIs(start, color.pawnStartRank) && Squares.rankDist(start, end) == 2) {
+                    enpassantSquare = behindMe
+                    // capture enpassant
+                } else if (Squares.isOnDiagonal(start, end) && fetchPiece(end).isEmpty() && end == enpassantSquare) {
+                    removePiece(behindMe)
+                    // if not setting, or capturing, clear it
+                } else {
+                    enpassantSquare = null
+                }
+            }
 
-            // set enpassant
-           if (Squares.rankIs(start, color.pawnStartRank) && Squares.rankDist(start, end) == 2) {
-               enpassantSquare = behindMe
-               // capture enpassant
-           }  else if (Squares.isOnDiagonal(start, end) && fetchPiece(end).isEmpty() && end == enpassantSquare) {
-                removePiece(behindMe)
-               // if not setting, or capturing, clear it
-           } else {
-               enpassantSquare = null
-           }
+            piece.isKing() -> {
+                // we use direct squares, since horizontals will have a diff of 2, verticals wont (this is a fast check)
+                // if this ever happens, we assume castling was possible, although the flags may advice against it
+                if (abs(start - end) == Squares.KING_CASTLE_DISTANCE) {
+                    val rookSquare: square
+                    val rookDestination: square
+                    // make a new rook, we don't waste time querying the board
+                    val rook = Piece.from(Type.ROOK, color)
 
+                    if (start > end) {
+                        // queen side,
+                        rookSquare = end - 2
+                        rookDestination = end + 1
+                    } else {
+                        // king side
+                        rookSquare = end + 1
+                        rookDestination = end - 1
+                    }
+
+                    if (Squares.isInBounds(rookSquare) && Squares.isInBounds(rookDestination)) {
+                        removePiece(rookSquare)
+                        addPiece(rook, rookDestination)
+                    }
+
+                    enpassantSquare = null
+                }
+                castleRights = castleRights.without(CastleRights.from(color))
+            }
         }
-
         removePiece(start)
         addPiece(piece, end)
     }
 
     private fun squareBehind(start: square, color: Color): Int {
-        return start + (ROW_INCREMENT * color.enemy.pawnDirection)
+        return start + (Squares.ROW_INCREMENT * color.enemy.pawnDirection)
     }
-
-
-
 
     private fun defaultPromotion(color: Color): Piece {
         return when (color) {
@@ -156,6 +176,10 @@ class Board : MutableChessBoard {
     override fun fetchPieceBitBoard(pieceType: Piece): BitBoard {
         require(pieceType.isNotEmpty()) { "There is no bit board for ${Piece.EMPTY}." }
         return bitBoards[pieceType.value]
+    }
+
+    override fun getCastleRights(): CastleRights {
+        return castleRights
     }
 
     override fun getOccupancy(color: Color?): ULong {
@@ -181,7 +205,7 @@ class Board : MutableChessBoard {
     private fun isInBounds(square: square) = square in Squares.range
 
     override fun clone(): MutableChessBoard {
-        return Board(bitBoards, enpassantSquare)
+        return Board(bitBoards, enpassantSquare, castleRights)
     }
 
     override fun loadFen(fen: String) {
