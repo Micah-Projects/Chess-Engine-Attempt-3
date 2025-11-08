@@ -5,18 +5,36 @@ import model.board.ChessBoard
 import model.board.MutableChessBoard
 import model.board.Color
 import model.misc.FenString
-import model.misc.getString
 import model.misc.literal
 import model.misc.move
 import model.movement.BitBoardMoveGenerator
 import model.movement.MoveGenerator
 
 class Game : ChessGame {        // maybe make a new class called "CommandedGame" for cheats and such
-    private val board: MutableChessBoard = Board()
-    private var turn: Color? = null
+    private val board: MutableChessBoard
+    private var turn: Color?
     private var validMoves: List<move> = listOf()
     private val mg: MoveGenerator = BitBoardMoveGenerator()
-    private var started = false
+    private var started: Boolean = false
+
+    constructor(fen: FenString = FenString()) {
+        board = Board()
+        board.loadFen(fen.fen)
+        turn = fen.turn
+    }
+
+    constructor(board: MutableChessBoard, turn: Color? = Color.WHITE) {
+        this.board = board
+        this.turn = turn
+        if (turn != null) {
+            started = true
+            validMoves = mg.generateMoves(board, turn)
+        }
+    }
+
+    override fun clone(): ChessGame {
+        return Game(board.toMutable(), turn)
+    }
 
     override fun start(fen: FenString) {
         if (started) return
@@ -55,7 +73,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         require(turn != null) {
             "Cannot play move. Game is over or hasn't started. (turn is null)"
         }
-        if (move !in validMoves) throw IllegalArgumentException("Move ${move.getString()} is invalid.")
+        if (move !in validMoves) throw IllegalArgumentException("Move ${ move/*move.getString()*/} is invalid.")
         board.makeMove(move)
         nextTurn()
     }

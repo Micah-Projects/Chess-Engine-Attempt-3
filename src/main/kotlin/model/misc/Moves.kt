@@ -19,14 +19,14 @@ private const val CASTLE_BIT = 1
 private const val PROMOTION_BIT = 2
 private const val ENPASSANT_BIT = 3
 private const val CHECK_BIT = 4
-private const val PROMOTION_TYPE_BIT = 5
+private const val PROMOTION_TYPE_BIT = 4
 
 private const val CAPTURE_FLAG =    1 shl CAPTURE_BIT               // 0b000000001
 private const val CASTLE_FLAG =     1 shl CASTLE_BIT                // 0b000000010
 private const val PROMOTION_FLAG =  1 shl PROMOTION_BIT             // 0b000000100
 private const val ENPASSANT_FLAG =  1 shl ENPASSANT_BIT             // 0b000001000
 private const val CHECK_FLAG =      1 shl CHECK_BIT                 // 0b000010000
-private const val PROMOTION_TYPE_FLAG = 15 shl PROMOTION_TYPE_BIT   // 0b111100000
+private const val PROMOTION_TYPE_FLAG = 0b111 shl PROMOTION_TYPE_BIT// 0b011100000
 
 object Moves {
     fun encode(startSquare: Int, endSquare: Int, flags: Int = 0): move {
@@ -46,7 +46,7 @@ object Moves {
                 ((if (promotion) 1 else 0) shl PROMOTION_BIT) or
                 ((if (enpassant) 1 else 0) shl ENPASSANT_BIT) or
                 ((if (check) 1 else 0) shl CHECK_BIT) or
-                ((if (promotionType != Piece.Type.NONE) promotionType else Piece.Type.NONE).value shl PROMOTION_TYPE_BIT)
+                ((if (!promotionType.isEmpty()) promotionType else Piece.Type.NONE).value shl PROMOTION_TYPE_BIT)
     }
 
     fun addFlags(move: move, flags: Int = 0): move = (move) or  (flags shl FLAGS_BIT)
@@ -59,8 +59,8 @@ fun move.start(): Int = (this and START_SQUARE_SELECTOR) shr START_SQUARE_BIT
 fun move.end(): Int = (this and END_SQUARE_SELECTOR) shr END_SQUARE_BIT
 fun move.flags(): Int = (this and FLAGS_SELECTOR) shr FLAGS_BIT
 
-fun move.getPromotion(): Piece = Piece.from ((flags() and PROMOTION_TYPE_FLAG) shr PROMOTION_TYPE_BIT)
-fun move.getString(): String = getFlagNames().joinToString() + " From ${Squares.asText(start())} to ${ Squares.asText(end())}"
+ fun move.getPromotion(): Piece.Type = Piece.Type.playable[((flags() and PROMOTION_TYPE_FLAG) shr PROMOTION_TYPE_BIT)]
+//fun move.getString(): String = getFlagNames().joinToString() + " From ${Squares.asText(start())} to ${ Squares.asText(end())}"
 fun move.literal(): String = "${Squares.asText(start())}${Squares.asText(end())}"
 
 fun move.isCapture(): Boolean = flags() and CAPTURE_FLAG != 0
@@ -69,15 +69,15 @@ fun move.isPromotion(): Boolean = flags() and PROMOTION_FLAG != 0
 fun move.isEnPassant(): Boolean  = flags() and ENPASSANT_FLAG != 0
 fun move.isCheck(): Boolean  = flags() and CHECK_FLAG != 0
 fun move.isQuiet(): Boolean = flags() and (CAPTURE_FLAG or PROMOTION_FLAG or CASTLE_FLAG or ENPASSANT_FLAG or CHECK_FLAG) == 0
-
-fun move.getFlagNames(): List<String> {
-    val names = mutableListOf<String>()
-    if (isCapture()) names.add("Capture")
-    if (isEnPassant()) names.add("En Passant")
-    if (isCastle()) names.add("Castle")
-    if (isCheck()) names.add("Check")
-    if (isPromotion()) names.add("Promotion to ${getPromotion()}")
-    if (names.isEmpty()) names.add("Quiet Move")
-
-    return names
-}
+//
+//fun move.getFlagNames(): List<String> {
+//    val names = mutableListOf<String>()
+//    if (isCapture()) names.add("Capture")
+//    if (isEnPassant()) names.add("En Passant")
+//    if (isCastle()) names.add("Castle")
+//    if (isCheck()) names.add("Check")
+//    if (isPromotion()) names.add("Promotion to ${getPromotion()}")
+//    if (names.isEmpty()) names.add("Quiet Move")
+//
+//    return names
+//}

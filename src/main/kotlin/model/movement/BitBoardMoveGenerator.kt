@@ -3,11 +3,11 @@ package model.movement
 import model.board.MutableChessBoard
 import model.board.Color
 import model.board.Piece
+import model.misc.BetterMoves
 import model.misc.BitBoard
 import model.misc.BitBoards
 import model.misc.BitBoards.binaryFill
 import model.misc.BitBoards.getSetBitIndices
-import model.misc.Moves
 import model.misc.Squares
 import model.misc.move
 import model.misc.square
@@ -65,7 +65,7 @@ class BitBoardMoveGenerator : MoveGenerator {
 
     private val rankMask = Array<ULong>(Squares.NUM_RANKS) { rank ->
         val b = 1uL shl rank * 8
-        RayCrawler.crawlRays(b.countTrailingZeroBits(), RayCrawler.horizontals)
+        RayCrawler.crawlRays(b.countTrailingZeroBits(), RayCrawler.horizontals, includeStart = true)
     }
     private val fileMask = Array<ULong>(Squares.NUM_RANKS) { file ->
         val b = 1uL shl file
@@ -181,7 +181,7 @@ class BitBoardMoveGenerator : MoveGenerator {
         }
         attackMask = attackMask and friendlyOccupancy.inv()
         BitBoards.iterateBits(attackMask) { attack ->
-            moves.add(Moves.encode(square, attack))
+            moves.add(BetterMoves.encode(piece,square, attack))
         }
         return moves
     }
@@ -207,37 +207,38 @@ class BitBoardMoveGenerator : MoveGenerator {
 
         if (pawnDirection == 1) {
             onePush = (pawnMask shl 8) and emptySquares
-            twoPush = ((pawnMask and rankMask[startRank]) shl 16) and emptySquares and (emptySquares shl 8)
+            twoPush = ((pawnMask and rankMask[startRank]) shl 16) and emptySquares and (onePush shl 8)// and (emptySquares shl 8)
         } else {
             onePush = (pawnMask shr 8) and emptySquares
-            twoPush = ((pawnMask and rankMask[startRank]) shr 16) and emptySquares and (emptySquares shl 8)
+            twoPush = ((pawnMask and rankMask[startRank]) shr 16) and emptySquares and (onePush shr 8)// and (emptySquares shl 8)
         }
 
         // push 1 - can promote
         BitBoards.iterateBits(onePush) { to ->
             if (Squares.rankOf(to) == promotionRank) {
-                getPromotions(to - oneStep, to)
+                moves.addAll(getPromotions(piece, to - oneStep, to))
             } else {
-                moves.add(Moves.encode(to - oneStep, to))
+                moves.add(BetterMoves.encode(piece, to - oneStep, to))
             }
         }
         // push 2 - will never promote
         BitBoards.iterateBits(twoPush) { to ->
-            moves.add(Moves.encode(to - twoStep, to))
+            moves.add(BetterMoves.encode(piece, to - twoStep, to))
         }
+
         // capture enemies - can promote
         BitBoards.iterateBits(pawnMask)  { square ->
             BitBoards.iterateBits(pawnAttackMasks[piece.color.value][square] and enemyOccupancy) { attack ->
                 if (Squares.rankOf(attack) == promotionRank) {
-                    moves.addAll(getPromotions(square, attack))
+                    moves.addAll(getPromotions(piece,square, attack))
                 } else {
-                    moves.add(Moves.encode(square, attack))
+                    moves.add(BetterMoves.encode(piece, square, attack))
                 }
             }
 
-            if (enpassant != null) {            // yes, that is a magic number. fight me
+            if (enpassant != null) {
                 if (Squares.fileDist(square, enpassant) == 1 && Squares.isOnDiagonal(square, enpassant)) {
-                   moves.add(Moves.encode(square, enpassant))
+                   moves.add(BetterMoves.encode(piece, square, enpassant))
                 }
             }
         }
@@ -245,14 +246,10 @@ class BitBoardMoveGenerator : MoveGenerator {
         return moves
     }
 
-    private fun getPromotions(from: square, to: square, wasCapture: Boolean = false): List<move> {
+    private fun getPromotions(piece: Piece, from: square, to: square): List<move> {
         val moves = mutableListOf<move>()
         for (type in Piece.Type.promotions) {
-            moves.add(Moves.encode(from, to, Moves.encodeFlags(
-                promotion = true,
-                capture = wasCapture,
-                promotionType = type
-            )))
+            moves.add(BetterMoves.encode(piece, from, to, type))
         }
         return moves
     }

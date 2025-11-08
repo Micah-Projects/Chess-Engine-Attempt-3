@@ -48,6 +48,11 @@ interface ChessGame {
     fun getBoard(): ChessBoard
 
     /**
+     * Returns a clone of this chess game.
+     */
+    fun clone(): ChessGame
+
+    /**
      * Plays the given move onto the board. If the move is illegal, or if it's not the moving player's turn, an
      * IllegalArgumentException is thrown.
      */

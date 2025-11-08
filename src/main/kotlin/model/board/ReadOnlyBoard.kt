@@ -3,7 +3,7 @@ package model.board
 import model.misc.BitBoard
 import model.movement.CastleRights
 
-class ReadOnlyBoard(private val board: ChessBoard) : ChessBoard {
+class ReadOnlyBoard(private val board: ChessBoard = Board()) : ChessBoard {
 
     override fun fetchPiece(square: Int): Piece {
         return board.fetchPiece(square)

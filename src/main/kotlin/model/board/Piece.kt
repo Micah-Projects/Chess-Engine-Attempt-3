@@ -33,8 +33,9 @@ enum class Piece(val value: Int, val type: Type, val symbol: String) {
 
         companion object {
             val playable = entries.toTypedArray().copyOfRange(1, entries.size)
-            val promotions = entries.toTypedArray().copyOfRange(1, entries.size - 1)
+            val promotions = entries.toTypedArray().copyOfRange(2, entries.size - 1)
         }
+        fun isEmpty() = this == NONE
     }
 
     companion object {

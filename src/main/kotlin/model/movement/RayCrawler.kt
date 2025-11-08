@@ -40,7 +40,7 @@ object RayCrawler {
         stopDirectionIf: (RayData.() -> Boolean) = { false },
         stopAllIf: (RayData.() -> Boolean) = { false },
         maxDist: Int = MAX_DISTANCE,
-        includeEnd: Boolean = true
+        includeStart: Boolean = true
     ): ULong {
         var result = 0uL
         var stopAll = false
@@ -59,7 +59,7 @@ object RayCrawler {
                 val stopThisDirection = stopDirectionIf(data)
                 stopAll = stopAllIf(data)
 
-                if (accumulateIf(data) && from != current) {
+                if (accumulateIf(data) && (from != current || includeStart)) {
                     result = BitBoards.addBit(result, current)
                 }
 
@@ -83,12 +83,12 @@ object RayCrawler {
         return crawlRays(from, directions, maxDist = maxDist)
     }
 
-    fun crawlUntilBlockers(blockers: ULong, startFrom: square, directions: List<Int>, includeEnd: Boolean, maxDist: Int = MAX_DISTANCE): ULong {
+    fun crawlUntilBlockers(blockers: ULong, startFrom: square, directions: List<Int>, includeStart: Boolean, maxDist: Int = MAX_DISTANCE): ULong {
         return crawlRays(startFrom,  directions,
             accumulateIf = { true },
             stopDirectionIf = { BitBoards.hasBit(blockers, this.current) },
             maxDist = maxDist,
-            includeEnd = includeEnd
+            includeStart = includeStart
         )
     }
 
@@ -99,7 +99,7 @@ object RayCrawler {
                     direction in verticals && Squares.isOnVerticalEdge(next) ||
                     direction in diagonals && Squares.isOnEdge(next)
         },
-            includeEnd = false)
+            includeStart = false)
     }
 
     fun getRays(piece: Piece): List<Int> {
