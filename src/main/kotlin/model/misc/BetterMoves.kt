@@ -2,6 +2,7 @@ package model.misc
 
 import model.board.Piece
 import model.board.Piece.Type
+typealias move = Int
 
 private const val MOVING_PIECE_SHIFT = 0 // 4 bits
 private const val FROM_SHIFT = MOVING_PIECE_SHIFT + 4  // 6 bits
@@ -32,6 +33,7 @@ fun move.promotionType(): Piece.Type   {
     val type = ((this and PROMOTION_SELECTOR) shr PROMOTION_SHIFT)
     return if (type == 0) Piece.Type.NONE else Type.promotions[type - 1]
 }
+fun move.literal(): String = "${Squares.asText(from())}${Squares.asText(to())}"
 fun move.movingPiece(): Piece = Piece.from((this and MOVING_PIECE_SELECTOR) shr MOVING_PIECE_SHIFT)
 
 

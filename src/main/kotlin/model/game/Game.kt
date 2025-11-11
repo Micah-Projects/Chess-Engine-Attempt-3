@@ -45,7 +45,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
     }
 
     override fun isOver(): Boolean {
-        TODO("Not yet implemented")
+       return false
     }
 
     override fun getStatus(): GameStatus {

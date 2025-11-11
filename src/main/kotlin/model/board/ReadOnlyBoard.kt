@@ -13,6 +13,14 @@ class ReadOnlyBoard(private val board: ChessBoard = Board()) : ChessBoard {
         return board.fetchPieceBitBoard(pieceType)
     }
 
+    override fun fetchPieceMask(vararg pieces: Piece): BitBoard {
+        return board.fetchPieceMask(*pieces)
+    }
+
+    override fun fetchBitboards(): Array<BitBoard> {
+        return board.fetchBitboards()
+    }
+
     override fun getOccupancy(color: Color?): ULong {
         return board.getOccupancy(color)
     }

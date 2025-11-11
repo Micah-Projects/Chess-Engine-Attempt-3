@@ -181,6 +181,19 @@ class Board : MutableChessBoard {
         return bitBoards[pieceType.value]
     }
 
+    override fun fetchPieceMask(vararg pieces: Piece): BitBoard {
+        var mask = 0uL
+        for (piece in pieces) {
+            mask = mask or bitBoards[piece.value]
+        }
+        return mask
+    }
+
+    override fun fetchBitboards(): Array<BitBoard> {
+        return bitBoards.clone()
+    }
+
+
     override fun getCastleRights(): CastleRights {
         return castleRights
     }

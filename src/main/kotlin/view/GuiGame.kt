@@ -13,7 +13,6 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color.*
 import javafx.scene.text.Font
 import javafx.stage.Stage
-import model.board.Board
 import model.board.ChessBoard
 import model.board.Color
 import model.misc.Squares
@@ -29,6 +28,7 @@ class GuiGame  {
         private const val SQUARE_DIMENSION = 67.5
         private var viewBoard = ReadOnlyBoard() // place holding
         var moveHighlights = setOf<Int>()
+        var checkSquare = -1
         var orientation = model.board.Color.WHITE
         var currentState: States = States.BOARD_STATE
         var promoteColor = Color.WHITE
@@ -147,7 +147,7 @@ class GuiGame  {
             when (currentState) {
                 States.BOARD_STATE -> {
                     clickedSquare = getSquareFromScreen(e.x, e.y)
-                    Controller.setHighlights(clickedSquare)
+                    Controller.updateHighlights(clickedSquare)
                 }
 
                 States.PROMOTION_PROMPT -> {
@@ -222,6 +222,7 @@ class GuiGame  {
         val darkSquare: javafx.scene.paint.Color
         val lightSquare: javafx.scene.paint.Color
         val blueHighlight: javafx.scene.paint.Color
+        val redHighlight: javafx.scene.paint.Color
     }
 
     object Palettes {
@@ -230,12 +231,14 @@ class GuiGame  {
            override val darkSquare =  web("#D5AB6D")
            override val lightSquare = web("#E9D4B4")
            override val blueHighlight = web("#7DAFB5", 0.61)
+           override val redHighlight = web("#d91c1c", 0.55)
        }
 
        val prompt = object : Palette {
            override val darkSquare =  web("#D5AB6D").darker()
            override val lightSquare = web("#E9D4B4").darker()
            override val blueHighlight = web("#7DAFB5", 0.61).darker()
+           override val redHighlight = web("#d91c1c", 0.55).darker()
        }
    }
 
@@ -254,6 +257,11 @@ class GuiGame  {
                 // draw move squares of piece
                 if (sq in moveHighlights) {
                     paintBrush.fill = palette.blueHighlight
+                    drawSquare(file, rank) //
+                }
+
+                if (sq == checkSquare) {
+                    paintBrush.fill = palette.redHighlight
                     drawSquare(file, rank) //
                 }
             }

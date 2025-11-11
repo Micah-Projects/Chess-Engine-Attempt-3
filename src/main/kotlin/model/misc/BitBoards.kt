@@ -22,12 +22,8 @@ object BitBoards {
         var bb = bb
         var idx = 0
         val indices = mutableListOf<Int>()
-        while (bb != 0uL) {
-            if ((bb and 1uL) != 0uL) {
-                indices.add(idx)
-            }
-            bb = bb shr 1
-            idx++
+        iterateBits(bb) {
+            indices.add(it)
         }
         return indices
     }

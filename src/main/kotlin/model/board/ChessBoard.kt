@@ -18,6 +18,16 @@ interface ChessBoard {
     fun fetchPieceBitBoard(pieceType: Piece): BitBoard
 
     /**
+     * @return a combined [BitBoard] representing all the specified pieces' positions
+     */
+    fun fetchPieceMask(vararg pieces: Piece): BitBoard
+
+    /**
+     * @return an array containing all bitboards used by the board
+     */
+    fun fetchBitboards(): Array<BitBoard>
+
+    /**
      * @return a [BitBoard] representing the positions occupied by [color].
      * If color is null, the entire occupancy is retrieved.
      */

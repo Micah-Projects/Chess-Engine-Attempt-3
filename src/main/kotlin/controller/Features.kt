@@ -9,5 +9,4 @@ interface Features {
     fun printBoard()
     fun pollEvents()
 
-
 }

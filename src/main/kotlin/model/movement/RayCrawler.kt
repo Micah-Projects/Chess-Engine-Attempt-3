@@ -1,10 +1,13 @@
 package model.movement
 
+
 import model.board.Piece
 import model.board.Piece.Type
+import model.misc.BitBoard
 import model.misc.BitBoards
 import model.misc.Squares
 import model.misc.square
+import kotlin.math.sign
 
 /**
  * Ray crawling helper object for move generation.
@@ -12,15 +15,27 @@ import model.misc.square
  */
 object RayCrawler {
     const val MAX_DISTANCE = 7
+    const val DIRECTIONAL_VECTORS = 4
+    const val DIRECTION_COUNT = 8
 
     val diagonals = listOf(-9, -7, 7, 9)
     val horizontals = listOf( -1, 1,)
     val verticals = listOf(-8, 8)
+    val downDiagonal = listOf(-7, 7)
+    val upDiagonal = listOf(-9, 9)
 
     val knights = listOf(-17, -15, -10,-6, 6, 10, 15, 17)
     val queens = verticals + horizontals + diagonals
     val rooks = verticals + horizontals
     val pawnAttacks = listOf(7, 9)
+
+    val directionalVectors = listOf(verticals, horizontals, upDiagonal, downDiagonal)
+
+
+    fun directionIndexOf(direction: List<Int>): Int {
+        require(direction.size != 2) {"not a valid ray crawler direction. Directions must be of size 2"}
+        return directionalVectors.indexOf(direction)
+    }
 
     data class RayData(val origin: square, val current: square, val next: square, val direction: Int, val distance: Int)
 
@@ -40,7 +55,7 @@ object RayCrawler {
         stopDirectionIf: (RayData.() -> Boolean) = { false },
         stopAllIf: (RayData.() -> Boolean) = { false },
         maxDist: Int = MAX_DISTANCE,
-        includeStart: Boolean = true
+        includeStart: Boolean = false
     ): ULong {
         var result = 0uL
         var stopAll = false
@@ -63,20 +78,38 @@ object RayCrawler {
                     result = BitBoards.addBit(result, current)
                 }
 
-//                if (stopThisDirection) {
-//                    if (includeEnd)  result = BitBoards.addBit(result, current)
-//                    break
-//                } else if (stopAll || willWrap) {
-//                    break
-//                }
                 if (stopAll || stopThisDirection || willWrap) {
-//                    result = if (includeEnd) BitBoards.addBit(result, current)
-//                    else BitBoards.removeBit(result, current)
                     break
                 }
             }
         }
         return result
+    }
+
+    /**
+     * Attempts to draw a straight or diagonal line from point A to point B. if a line cant be found, it returns
+     * an empty [BitBoard]. The line includes both the start and end positions
+     */
+    fun lineTo(from: square, to: square, includeStart: Boolean = true, includeEnd: Boolean = false): BitBoard {
+        val direction = getDirection(from, to)
+        if (direction !in queens) return 0uL
+        return crawlRays(from, listOf(direction), includeStart = includeStart, stopDirectionIf = {
+            //((current == to) && !includeEnd) || (includeEnd && next == to)
+            next == to
+        })
+    }
+
+
+    fun getDirection(from: square, to: square): Int {
+        val difference = to - from
+        val direction = when {
+            Squares.rankDist(from, to) == 0 -> 1
+            difference % 8 == 0 -> 8
+            difference % 9 == 0 -> 9
+            difference % 7 == 0 -> 7
+            else -> 0
+        }
+        return direction * difference.sign
     }
 
     fun leap(from: square, directions: List<Int>, maxDist: Int = 1): ULong {
