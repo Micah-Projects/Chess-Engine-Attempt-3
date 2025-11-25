@@ -5,20 +5,21 @@ import command.MakeMove
 import command.PrintBoard
 import model.board.Color
 import model.board.Piece
-import model.board.Piece.Type
 import model.game.ChessGame
 import model.game.Game
+import model.game.ReadOnlyChessGame
 import model.misc.BetterMoves
-import model.misc.BitBoards
+import model.misc.FenString
 import model.misc.Squares
 import model.misc.from
+import model.misc.literal
 import model.misc.square
 import model.misc.to
 import model.movement.BitBoardMoveGenerator
 import view.GuiGame
 import view.GuiMenu
-import java.util.Stack
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.math.abs
 import kotlin.properties.Delegates
 import kotlin.system.exitProcess
 
@@ -27,7 +28,6 @@ fun main() = Controller.go(gui = true)
 object Controller : Features {
     var game: ChessGame = Game()
     var promotion: Piece.Type? = null
-    private var history = Stack<ChessGame>() // for timed modes, you usually wont be undoing
     private var tempFrom: Int = -1
     private var tempTo: Int = -1
     private var events = ConcurrentLinkedQueue<(Controller.() -> Unit)>()
@@ -87,13 +87,32 @@ object Controller : Features {
         commandQueue.add(PrintBoard(game.getBoard()))
     }
 
+    fun startGameWith(fen: FenString) {
+        events.add {
+            game = Game()
+            GuiGame.currentState = GuiGame.States.BOARD_STATE
+            GuiGame.viewGame(game)
+            game.start(fen)
+        }
+    }
+
     override fun startNewGame() {
         events.add {
             game = Game()
             GuiGame.currentState = GuiGame.States.BOARD_STATE
-            GuiGame.viewBoard(game.getBoard())
+            GuiGame.viewGame(game)
 
             game.start()
+
+//            CoroutineScope(Dispatchers.Default).launch {
+//                while (!game.isOver()) {
+//                    events.add {
+//                        game.playMove(game.getMoves(game.currentTurn()).random())
+//                        println(game.getBoard().textVisual())
+//                    }
+//                    delay(1000)
+//                }
+//            }
 
 //            game.playMove(BetterMoves.encode(
 //                Piece.WHITE_PAWN,
@@ -164,7 +183,6 @@ object Controller : Features {
         }
 
         if (moveAllowed) {
-            history.push(game.clone())
             val pro = promotion ?: Piece.Type.PAWN
             commandQueue.add(MakeMove(BetterMoves.encode(p, from, to, pro), game))
             promotion = null
@@ -173,28 +191,22 @@ object Controller : Features {
 
     fun handleUndo() {
         events.add {
-            if (!history.isEmpty()) {
-                val previous = history.pop()
-                game = previous
-                GuiGame.currentState = GuiGame.States.BOARD_STATE
-                GuiGame.viewBoard(previous.getBoard())
+            game.undoMove()
 
-            }
+//            if (!history.isEmpty()) {
+//                val previous = history.pop()
+//                game = previous
+//                GuiGame.currentState = GuiGame.States.BOARD_STATE
+//                GuiGame.viewBoard(previous.getBoard())
+//
+//            }
         }
     }
 
     // gui stuff - - - -
     fun updateHighlights(square: square) {
         events.add {
-            GuiGame.moveHighlights = game.getMoves(game.currentTurn()!!).filter { it.from() == square }.map { it.to()}.toSet()
-//            GuiGame.checkSquare = if (mg.getCheckStatus()) {
-//                BitBoards.getSetBitIndices(
-//                    game.getBoard()
-//                    .fetchPieceBitBoard(Piece.from(Type.KING, game.currentTurn()!!)))
-//                    .first()
-//            } else {
-//                -1
-//            }
+            GuiGame.moveHighlights = game.getMoves(game.turn!!).filter { it.from() == square }.map { it.to()}.toSet()
         }
     }
 
@@ -218,6 +230,7 @@ object Controller : Features {
             exitProcess(1)
         }
 
+        // testPerft5()
         val secondNanos = 1_000_000_000
         val rate = secondNanos / (pollRate * 2)
         if (gui) {
@@ -240,4 +253,123 @@ object Controller : Features {
             // add code to refresh the screen from the controller // maybe not
         }
     }
+    fun nonsense() {
+
+    }
+
+    fun benchGenSpeed(timeLimit: Long = 1_000_000_000L, position: FenString = FenString(), turn: Color = Color.WHITE) {
+        val game = Game()
+        val mg = BitBoardMoveGenerator()
+        val oneSecond = 1_000_000_000L
+        game.start(position)
+        var count = 0
+        var now = 0L
+        var i = 0L
+        val limit = timeLimit
+        while (now < limit) {
+            val start = System.nanoTime()
+            // i++
+            mg.generateMoves(game.getBoard(), Color.BLACK)
+            val end = System.nanoTime()
+            val time = end - start
+            count++
+            now += time
+        }
+
+        //  println("incs: $i")
+
+        println("moves generated: $count times in ${timeLimit/oneSecond.toDouble()} second(s) with ${String.format("%.6f", limit / count.toDouble() )}ns per call ")
+    }
+
+
+
+    fun perft(game: ReadOnlyChessGame, depth: Int, trackBranches: Boolean = false): Int {
+        val game = game.clone()
+        val maxDepth = depth
+        val rootPos = game.toFen()
+
+        return perftRecurse(game, depth, trackBranches, maxDepth, mutableListOf())
+    }
+
+    private fun perftRecurse(game: ChessGame, depth: Int, trackBranches: Boolean, maxDepth: Int, trace: MutableList<String>): Int {
+        var count = 0
+        if (depth <= 0) {
+            return 1
+        }
+
+        for (move in game.getMoves(game.turn)) {
+            val traceStep = "${abs(maxDepth - depth) + 1}. ${move.literal()}"
+            try {
+                trace.add(traceStep)
+                game.playMove(move)
+            } catch(e: Exception) {
+                println(game.getBoard().textVisual())
+                println(game.toFen())
+                println("Error in perft at depth $depth: ${e.message}")
+                println("trace: ${trace.reversed().joinToString(", ")}")
+                break
+            }
+
+            val fromThisBranch = perftRecurse(game, depth - 1, trackBranches, maxDepth, trace)
+            count += fromThisBranch
+            game.undoMove()
+            trace.removeAt(trace.indexOf(traceStep))
+            if (trackBranches && depth == maxDepth) {
+                println("${move.literal()}: $fromThisBranch")
+            }
+        }
+
+        return count
+    }
+
+//    fun perft(depth: Int, game: Game) {
+//        val game = game.clone()
+//       // perd
+//
+//    }
+//
+//    fun perft(depth: Int, position: FenString = FenString(), inferenceDepth: Int = -1): Int {
+//
+//        var count = 0
+//        if (depth == 0) {
+//            return 1
+//        }
+//
+//        val turn = position.turn
+//        val game: ChessGame = Game()
+//        game.start(position)
+//        val moves = game.getMoves(turn)
+//
+//        for (move in moves) {
+//            val next = game.clone()
+//            try {
+//                next.playMove(move)
+//            } catch (e: IllegalArgumentException) {
+//                println(game.getBoard().textVisual())
+//                println(game.toFen())
+//                break
+//            }
+//
+//            val value = perft(depth - 1, FenString(next.toFen()))
+//
+//             if (depth == inferenceDepth) {
+//                 val fromThisMove = value
+//                 println("${move.literal()}: $fromThisMove")
+//             }
+//
+//            count += value
+//
+//        }
+//        return count
+//    }
+
+
+    fun testPerft5() {
+        // println("nodes at depth: $5: ${perft(5)}")
+        for (i in 0..5) {
+         //   println("nodes at depth: $i: ${perft(i)}")
+        }
+
+    }
+
 }

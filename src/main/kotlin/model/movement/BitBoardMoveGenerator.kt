@@ -17,76 +17,77 @@ import kotlin.math.abs
 
 
 class BitBoardMoveGenerator : MoveGenerator {
-    private val mgSliders = 2
-    private val bishopOrder = 0
-    private val rookOrder = 1
+    companion object {
+        private const val mgSliders = 2
+        private const val bishopOrder = 0
+        private const val rookOrder = 1
 
-    private val kingAttackMasks = Array<ULong>(Squares.COUNT) { square -> RayCrawler.leap(square, RayCrawler.queens) }
-    private val knightAttackMasks = Array<ULong>(Squares.COUNT) { square -> RayCrawler.leap(square, RayCrawler.knights) }
-    private val pawnAttackMasks = Array<Array<ULong>>(Color.COUNT) { color ->
-        val directions = if (color == 0) RayCrawler.pawnAttacks else RayCrawler.pawnAttacks.map { -it }
-        Array(Squares.COUNT) { square ->
-            RayCrawler.leap(square, directions)
-        }
-    }
-
-    private val sliderMasks = Array<Array<ULong>>(mgSliders) { idx ->
-        val piece = Piece.sliders[idx]
-        Array(Squares.COUNT) { square ->
-            RayCrawler.crawlExcludeEdge(square, RayCrawler.getRays(piece))
-        }
-    }
-    private val sliderBlockerSets = Array<Array<Array<ULong>>>(mgSliders) { idx ->
-        Array(Squares.COUNT) { square ->
-            binaryFill(sliderMasks[idx][square])
-        }
-    }
-    private val sliderMagics = MagicGenerator.getMagicKeys()
-    private val sliderAttackMap = Array<Array<Array<ULong>>>(mgSliders) { type ->
-        val piece = Piece.sliders[type]
-        Array(Squares.COUNT) { square ->
-            val blockersForSquare = sliderBlockerSets[type][square]
-            val neededBits = sliderMasks[type][square].countOneBits()
-            val shiftFactor = ULong.SIZE_BITS - neededBits.toInt()
-
-            // array sized to maximum possible magic index
-            val mapSize = 1 shl neededBits
-            val attacks = Array<ULong>(mapSize) { 0uL }
-
-            for (blockers in blockersForSquare) {
-                val occupancy = blockers and sliderMasks[type][square]
-                val magicIndex = ((sliderMagics[type][square] * occupancy) shr shiftFactor).toUInt().toInt()
-                attacks[magicIndex] = RayCrawler.crawlUntilBlockers(
-                    blockers, square, RayCrawler.getRays(piece), false
-                )
+        private val kingAttackMasks = Array<ULong>(Squares.COUNT) { square -> RayCrawler.leap(square, RayCrawler.queens) }
+        private val knightAttackMasks = Array<ULong>(Squares.COUNT) { square -> RayCrawler.leap(square, RayCrawler.knights) }
+        private val pawnAttackMasks = Array<Array<ULong>>(Color.COUNT) { color ->
+            val directions = if (color == 0) RayCrawler.pawnAttacks else RayCrawler.pawnAttacks.map { -it }
+            Array(Squares.COUNT) { square ->
+                RayCrawler.leap(square, directions)
             }
-            attacks
         }
 
-    }
+        private val sliderMasks = Array<Array<ULong>>(mgSliders) { idx ->
+            val piece = Piece.sliders[idx]
+            Array(Squares.COUNT) { square ->
+                RayCrawler.crawlRays(square, RayCrawler.getRays(piece))
+            }
+        }
+        private val sliderMasksNoEdges = Array<Array<ULong>>(mgSliders) { idx ->
+            val piece = Piece.sliders[idx]
+            Array(Squares.COUNT) { square ->
+                RayCrawler.crawlExcludeEdge(square, RayCrawler.getRays(piece))
+            }
+        }
+        private val sliderBlockerSets = Array<Array<Array<ULong>>>(mgSliders) { idx ->
+            Array(Squares.COUNT) { square ->
+                binaryFill(sliderMasksNoEdges[idx][square])
+            }
+        }
+        private val sliderMagics = MagicGenerator.getMagicKeys()
+        private val sliderAttackMap = Array<Array<Array<ULong>>>(mgSliders) { type ->
+            val piece = Piece.sliders[type]
+            Array(Squares.COUNT) { square ->
+                val blockersForSquare = sliderBlockerSets[type][square]
+                val neededBits = sliderMasksNoEdges[type][square].countOneBits()
+                val shiftFactor = ULong.SIZE_BITS - neededBits.toInt()
 
-    private val pinMasks = Array(Squares.COUNT) { kingSquare ->
-        Array(Squares.COUNT) { enemySliderSquare ->
-            RayCrawler.lineTo(kingSquare, enemySliderSquare, includeStart = false, includeEnd = true)
+                // array sized to maximum possible magic index
+                val mapSize = 1 shl neededBits
+                val attacks = Array<ULong>(mapSize) { 0uL }
+
+                for (blockers in blockersForSquare) {
+                    val occupancy = blockers and sliderMasksNoEdges[type][square]
+                    val magicIndex = ((sliderMagics[type][square] * occupancy) shr shiftFactor).toUInt().toInt()
+                    attacks[magicIndex] = RayCrawler.crawlUntilBlockers(
+                        blockers, square, RayCrawler.getRays(piece), false
+                    )
+                }
+                attacks
+            }
+
+        }
+
+        private val pinMasks = Array(Squares.COUNT) { kingSquare ->
+            Array(Squares.COUNT) { enemySliderSquare ->
+                RayCrawler.lineTo(kingSquare, enemySliderSquare, includeStart = false, includeEnd = false)
+            }
+        }
+
+        private val rankMask = Array<ULong>(Squares.NUM_RANKS) { rank ->
+            val b = 1uL shl rank * 8
+            RayCrawler.crawlRays(b.countTrailingZeroBits(), RayCrawler.horizontals, includeStart = true)
+        }
+        private val fileMask = Array<ULong>(Squares.NUM_RANKS) { file ->
+            val b = 1uL shl file
+            RayCrawler.crawlRays(b.countTrailingZeroBits(), RayCrawler.verticals)
         }
     }
-    private val xRayMasks = Array(mgSliders) { order -> // this impl is prolly not a good idea
-        val piece = Piece.sliders[order]
-        Array(Squares.COUNT) { attacker ->
-            val dir = RayCrawler.getRays(piece)
-            RayCrawler.crawlRays(attacker, dir)
-        }
-
-    }
-
-    private val rankMask = Array<ULong>(Squares.NUM_RANKS) { rank ->
-        val b = 1uL shl rank * 8
-        RayCrawler.crawlRays(b.countTrailingZeroBits(), RayCrawler.horizontals, includeStart = true)
-    }
-    private val fileMask = Array<ULong>(Squares.NUM_RANKS) { file ->
-        val b = 1uL shl file
-        RayCrawler.crawlRays(b.countTrailingZeroBits(), RayCrawler.verticals)
-    }
+    
 
     // vars to act as global data
     // these are observations that can be computed one time, rather than multiple times in different branches
@@ -107,6 +108,8 @@ class BitBoardMoveGenerator : MoveGenerator {
     private var safeSquares = 0uL
     private var enpassant: Int? = null
     private var kingAttackers = mutableListOf<Int>()
+    private var pieceSet: Array<Piece> = Piece.whitePieceSet
+    private var kingBB: BitBoard = 0uL
 
     private var enpassantBB: BitBoard = 0uL
 
@@ -114,11 +117,17 @@ class BitBoardMoveGenerator : MoveGenerator {
 
 
     private fun getSliderAttackMask(sliderOrder: Int, square: square): BitBoard {
-        val index = indexFromOccupancy(sliderOrder, square, sliderMasks[sliderOrder][square] and totalOccupancy)
+        val index = indexFromOccupancy(sliderOrder, square, sliderMasksNoEdges[sliderOrder][square] and totalOccupancy)
         return sliderAttackMap[sliderOrder][square][index]
     }
+
+    private fun getSliderAttackMaskNoKing(sliderOrder: Int, square: square): BitBoard {
+        val index = indexFromOccupancy(sliderOrder, square, sliderMasksNoEdges[sliderOrder][square] and totalOccupancy and kingBB.inv())
+        return sliderAttackMap[sliderOrder][square][index]
+    }
+
     private fun indexFromOccupancy(sliderIdx: Int, square: square, occupancy: ULong): Int {
-        val shiftFactor = ULong.SIZE_BITS - sliderMasks[sliderIdx][square].countOneBits()
+        val shiftFactor = ULong.SIZE_BITS - sliderMasksNoEdges[sliderIdx][square].countOneBits()
         val hashValue = ((sliderMagics[sliderIdx][square] * occupancy) shr shiftFactor).toUInt().toInt()
         return hashValue
     }
@@ -192,9 +201,10 @@ class BitBoardMoveGenerator : MoveGenerator {
 
     private fun observeBoard() {
         val king = Piece.from(Type.KING, genColor)
-        val kingBB = board.fetchPieceBitBoard(king) // just count the 0 bits instead of this
+        kingBB = board.fetchPieceBitBoard(king) // just count the 0 bits instead of this
         require(kingBB != 0uL) { "$king doesn't exist on the board!" }
         kingPosition = kingBB.countTrailingZeroBits()
+
         friendlyOccupancy = board.getOccupancy(genColor)
         enemyOccupancy = board.getOccupancy(genColor.enemy)
         totalOccupancy = enemyOccupancy or friendlyOccupancy
@@ -225,20 +235,16 @@ class BitBoardMoveGenerator : MoveGenerator {
         this.board = board
         this.genColor = color
         this.pointer = 0 // act as a clear
+        this.pieceSet = if (color == Color.WHITE) Piece.whitePieceSet else Piece.blackPieceSet
         observeBoard() // occupancy, enpassant, king position
         observeKingSafety() // check, king attackers, enemy attacks, safe squares
-
-        for (piece in Piece.playable) {
-            if (piece.color != genColor) continue // per call for a color, 6 wasted steps (micro opt here)
-            if (piece.isPawn()) {
-                genPawns(piece)
-                continue
-            }
-
-            val positions = getSetBitIndices(board.fetchPieceBitBoard(piece))
-
-            for (position in positions) {
-                generateMovesForPiece(position, piece)
+        genPawns(pieceSet[0]) // always pawns
+        val limit = pieceSet.size
+        var i = 1 // set to 1 to skip pawn gen
+        while( i < limit) {
+            val piece = pieceSet[i++]
+            BitBoards.iterateBits(board.fetchPieceBitBoard(piece)) {
+                generateMovesForPiece(it, piece)
             }
         }
     }
@@ -258,37 +264,43 @@ class BitBoardMoveGenerator : MoveGenerator {
     }
 
     private fun generateMovesForPiece(position: square, piece: Piece) {
-        val moves = mutableListOf<move>()
         var attackMask = getPseudoLegalAttackScope(piece, position)
 
         if (piece.isKing()) {
             for (attackerPosition in kingAttackers) { // must account for xrays (probably over Engineered for this small case
                 val attacker = board.fetchPiece(attackerPosition)
-                enemyAttackMask = enemyAttackMask or when {
-                    attacker.isRook() ->  xRayMasks[rookOrder][attackerPosition]
-                    attacker.isBishop() -> xRayMasks[bishopOrder][attackerPosition]
-                    attacker.isQueen() -> {
-                        xRayMasks[rookOrder][attackerPosition] or xRayMasks[bishopOrder][attackerPosition]
-                    }
-                    else -> 0uL
-                }
+                enemyAttackMask = enemyAttackMask or
+                        (when {
+                            attacker.isRook() ->   getSliderAttackMaskNoKing(rookOrder, attackerPosition)
+                            attacker.isBishop() -> getSliderAttackMaskNoKing(bishopOrder, attackerPosition)
+                            attacker.isQueen() -> {
+                                getSliderAttackMaskNoKing(rookOrder, attackerPosition) or getSliderAttackMaskNoKing(bishopOrder, attackerPosition)
+                            }
+                            else -> 0uL
+                        }
+                        )
             }
             safeSquares = enemyAttackMask.inv()
             // 1111 // castle rights
             // 0,1 for white, 2, 3 for black
+
             val rights = board.getCastleRights().bits
-            val KS = 1 shl 0 + (piece.color.value * 2) and rights // king side // index rights for legality
-            val QS = 1 shl 1 + (piece.color.value * 2) and rights // queen side
+            if (rights > 0) {
+                val validSquares = (safeSquares and emptySquares)
+                val KS = 1 shl 0 + (piece.color.value * 2) and rights // king side // index rights for legality
+                val QS = 1 shl 1 + (piece.color.value * 2) and rights // queen side
 
-            val rightOne = (1uL shl (kingPosition + 1)) and safeSquares and emptySquares// KS
-            val rightTwo = rightOne shl 1 //and safeSquares
+                val rightOne = (1uL shl (kingPosition + 1)) and validSquares //and emptySquares// KS
+                val rightTwo = rightOne shl 1 and validSquares
 
-            val leftOne = (1uL shl (kingPosition - 1)) and safeSquares and emptySquares // QS
-            val leftTwo = leftOne shr 1 //and safeSquares // we dont check safe squares here, filter at end instead
+                val leftOne = (1uL shl (kingPosition - 1)) and validSquares// and emptySquares // QS
+                val leftTwo = leftOne shr 1 and validSquares
+                val leftThree = (leftTwo shr 1) and emptySquares // king doesnt pass through it, so it just needs emptiness
 
-            if (KS != 0 && !check) attackMask = attackMask or rightTwo
-            if (QS != 0 && !check) attackMask = attackMask or leftTwo
+                if (KS != 0 && !check) attackMask = attackMask or rightTwo
+                if (QS != 0 && !check && leftThree != 0uL) attackMask = attackMask or leftTwo
 
+            }
             attackMask = attackMask and safeSquares // king cannot move into danger
         } else {
             attackMask = accountedForKingSafety(piece, position, attackMask) // pieces must ensure king is safe
@@ -301,40 +313,71 @@ class BitBoardMoveGenerator : MoveGenerator {
     }
 
     // filters out moves that put or leave the king in check
-    private fun accountedForKingSafety(piece: Piece ,position: square, attackMask: BitBoard): BitBoard {
+    private fun accountedForKingSafety(friendlyPiece: Piece, position: square, attackMask: BitBoard): BitBoard {
         var m = attackMask
         for (enemyPosition in enemyPositions) {
             ///////////
             val enemyAttacker = board.fetchPiece(enemyPosition)
             val enemyAttacks: BitBoard = getFullAttackScope(enemyAttacker, enemyPosition)
-
+            val kingAttackedByEnemy = (kingBB) and enemyAttacks != 0uL
+            val enemyBB = (1uL shl enemyPosition)
             if (enemyAttacker.isSlider()) {
                 val pinMask = pinMasks[kingPosition][enemyPosition] // what are the possible pin squares?
                 val pinRelevance = pinMask and enemyAttacks  // does the attacker see these squares?
-                if (pinRelevance == 0uL) continue // this attacker doesnt see these squares
-                val defendingSquares = pinMask and enemyAttacks or (1uL shl enemyPosition) // where can we go to defend?
-                val itemsInPinRay = (pinMask and enemyAttacks and totalOccupancy).countOneBits() // how many pieces defend?
-                val isOnlyDefender = itemsInPinRay == 1 && pinRelevance and (1uL shl position) != 0uL // are we the only defender?
+                if (pinMask == 0uL && !kingAttackedByEnemy) continue // if there isnt even a pin mask, just move onto the next
 
+                if (pinRelevance == 0uL) { // if theres a pin mask, but the attacker doesnt see it,
+//                    if( friendlyPiece.isQueen() && position == Squares.valueOf("f3")) {
+//                      //  println("Queen here")
+//                    }
+                    if (kingAttackedByEnemy) {
+                        m = (1uL shl enemyPosition) and attackMask // before, without the break, the queen's moves are being invalidated multiple times
+                        //break
+                    }
+                    continue
+                } // this attacker doesnt see these squares,
+                val defendingSquares = (pinMask and enemyAttacks) or (enemyBB) // where can we go to defend?
+
+
+                val itemsInPinRay = (pinMask and enemyAttacks and totalOccupancy).countOneBits()  // how many pieces defend?
+               // if (friendlyPiece.isPawn() && position == Squares.valueOf("c7")) println("Items in pin ray: $itemsInPinRay")
+                val isOnlyDefender = itemsInPinRay == 1 && pinRelevance and (1uL shl position) != 0uL // are we the only defender?
+//
                 if (itemsInPinRay == 0 || isOnlyDefender) { // no defenders? -> check
-                    m = defendingSquares and attackMask // we must defend where we can
-                    break // we're already pinned, or forced to defend
-                } else {
-                    if (piece.isPawn()) { // done here to reduce most lookups
-                       if (itemsInPinRay == 2 && abs(position - enemyPosition) < 8) m = m and enpassantBB.inv() // edge case enpassant reveals king
+                        m = defendingSquares and m //) // we must defend where we can
+
+                   // break // we're already pinned, or forced to defend
+                } else { // youre not in the pin, and you cant move into the pin..
+                  ///  if (check) m = attackMask and defendingSquares// .
+                    if (friendlyPiece.isPawn()) { // done here to reduce most lookups
+                       if (itemsInPinRay == 2 &&
+                           Squares.isOnSameRank(kingPosition, position) &&
+                           Squares.isOnSameRank(position, enemyPosition)) {
+                           m = m and enpassantBB.inv() // edge case enpassant reveals king
+                       }
                         // <8 to ensure the block is active only for the horizontal case
                     }
-                    // otherwise not pinned by this enemy piece
-               }
+                }
             } else  { // all other pieces can't be blocked from attack, no need to check for enemy king attack
-                if ((1uL shl kingPosition) and enemyAttacks != 0uL) { // our king is attacked
-                    m = attackMask and (1uL shl enemyPosition)
-                    if (piece.isPawn()) m = m or (attackMask and enpassantBB)
+                if (kingAttackedByEnemy) { // our king is attacked
+                    // if this isnt an enpassantable move
+                    if (friendlyPiece.isPawn() && enemyAttacker.isPawn()) {
+                        val pm = enpassantBB or enemyBB
+                        m = m and pm
+                        // else keep pawn moves until invalidated later in the loop
+                    } else {
+                        m = m and enemyBB
+                    }
+
+                   // if (friendlyPiece.isPawn()) m = m //or (attackMask and enpassantBB)
+                    //break
                     // edge case enpassant to remove pawn attacker
                    // we can only capture that piece if we even see it
                 }
             }
+
         }
+
         return m
     }
 
@@ -371,6 +414,7 @@ class BitBoardMoveGenerator : MoveGenerator {
         }
         val enpassant = enpassant
         val pawnMask = board.fetchPieceBitBoard(piece)
+        if (pawnMask == 0uL) return // no need to calculate pawn data further
         val startRank = piece.color.pawnStartRank
         val pawnDirection = piece.color.pawnDirection
         val promotionRank = piece.color.promotionRank
@@ -403,19 +447,19 @@ class BitBoardMoveGenerator : MoveGenerator {
         }
 
         // capture enemies - can promote
-        BitBoards.iterateBits(pawnMask)  { square ->
-            BitBoards.iterateBits(pawnAttackMasks[piece.color.value][square] and enemyOccupancy) { attack ->
-                safeAddMove( piece, square, attack,
+        BitBoards.iterateBits(pawnMask)  { position ->
+            BitBoards.iterateBits(pawnAttackMasks[piece.color.value][position] and enemyOccupancy) { attack ->
+                safeAddMove( piece, position, attack,
                     1uL shl attack,
                     promotion = Squares.rankOf(attack) == promotionRank
                 )
             }
 
             if (enpassant != null) {
-                if (Squares.fileDist(square, enpassant) == 1 &&
-                    Squares.isOnDiagonal(square, enpassant) &&
-                    pawnDirection * Squares.rankOf(square) < Squares.rankOf(enpassant)) {
-                    safeAddMove(piece, square, enpassant, 1uL shl enpassant)
+                if (Squares.fileDist(position, enpassant) == 1 &&
+                    Squares.isOnDiagonal(position, enpassant) &&
+                    pawnDirection * Squares.rankOf(position) < pawnDirection * Squares.rankOf(enpassant)) {
+                    safeAddMove(piece, position, enpassant, 1uL shl enpassant)
                 }
             }
         }

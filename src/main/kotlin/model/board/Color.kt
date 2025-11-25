@@ -5,9 +5,9 @@ import model.misc.Debug
 /**
  * The colors for two chess players.
  */
-enum class Color(val value: Int) {
-    WHITE(0),
-    BLACK(1);
+enum class Color(val value: Int, val symbol: String) {
+    WHITE(0, "w"),
+    BLACK(1, "b");
     companion object {
         const val COUNT = 2
         /**

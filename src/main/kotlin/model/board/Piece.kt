@@ -44,6 +44,8 @@ enum class Piece(val value: Int, val type: Type, val symbol: String) {
         const val LEAPER_COUNT = 2
         const val TYPES = 6
         val playable = entries.toTypedArray().copyOfRange(1, entries.size)
+        val whitePieceSet = entries.toTypedArray().copyOfRange(1, 7)
+        val blackPieceSet = entries.toTypedArray().copyOfRange(7, entries.size)
         val sliders = listOf<Type>(Type.BISHOP, Type.ROOK, Type.QUEEN)
         val leapers = listOf(Type.KNIGHT, Type.KING)
 

@@ -3,10 +3,11 @@ package view
 import model.board.Board
 import model.board.ChessBoard
 import model.board.MutableChessBoard
+import model.game.ReadOnlyChessGame
 
 class TextView : View {
-    var board: ChessBoard   = Board()
-    override fun viewBoard(board: ChessBoard) {
-        this.board = board
+    lateinit var game: ReadOnlyChessGame
+    override fun viewGame(game: ReadOnlyChessGame) {
+        this.game = game
     }
 }

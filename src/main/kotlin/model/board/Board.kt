@@ -20,11 +20,12 @@ class Board : MutableChessBoard {
 
     private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
-    private var castleRights = CastleRights.FULL
+    private var castleRights: CastleRights
 
     constructor() {
         bitBoards = Array<BitBoard>(Piece.COUNT) { BitBoards.EMPTY_BB }
         enpassantSquare = null
+        castleRights = CastleRights.FULL
     }
 
     private constructor(bitboards: Array<BitBoard>, enpassantSquare: square?, castleRights: CastleRights) {
@@ -49,12 +50,7 @@ class Board : MutableChessBoard {
         require(isInBounds(square)) { "Cannot remove piece on out-of-bounds square: $square " }
         for (i in bitBoards.indices) {
             bitBoards[i] = BitBoards.removeBit(bitBoards[i], square)
-            // questionable code below
-            if (bitBoards[i] != BitBoards.removeBit(bitBoards[i], square)) {
-                Debug.log(Debug.Area.BOARD) { "${Piece.from(i)} added on $square -> ${Squares.asText(square)}" }
-            }
         }
-
     }
 
 
@@ -63,10 +59,10 @@ class Board : MutableChessBoard {
     }
 
     override fun movePiece(start: square, end: square) {
-        movePiece(start, end, Piece.Type.NONE)
+        movePiece(start, end, Type.PAWN)
     }
 
-    private fun movePiece(start: square, end: square, promotion: Piece.Type = Type.NONE) {
+    private fun movePiece(start: square, end: square, promotion: Type) {
         val piece = fetchPiece(start)
         require(piece.isNotEmpty()) { "No piece found on square: $start." }
         require(isInBounds(start)) { "Start square: $start isn't in bounds." }
@@ -109,11 +105,13 @@ class Board : MutableChessBoard {
             piece.isPawn() -> {
                 val behindMe = squareBehind(end, color)
                 // set enpassant
+
                 if (Squares.rankIs(start, color.pawnStartRank) && Squares.rankDist(start, end) == 2) {
                     enpassantSquare = behindMe
                     // capture enpassant
                 } else if (Squares.isOnDiagonal(start, end) && fetchPiece(end).isEmpty() && end == enpassantSquare) {
                     removePiece(behindMe)
+                    enpassantSquare = null
                     // if not setting, or capturing, clear it
                 } else if (Squares.rankOf(end) == color.promotionRank) {
                     finalPiece = Piece.from(promotion, color)
@@ -146,9 +144,8 @@ class Board : MutableChessBoard {
                         removePiece(rookSquare)
                         addPiece(rook, rookDestination)
                     }
-
-                    enpassantSquare = null
                 }
+                enpassantSquare = null
                 castleRights = castleRights.without(CastleRights.from(color))
             }
         }
@@ -158,13 +155,6 @@ class Board : MutableChessBoard {
 
     private fun squareBehind(start: square, color: Color): Int {
         return start + (Squares.ROW_INCREMENT * color.enemy.pawnDirection)
-    }
-
-    private fun defaultPromotion(color: Color): Piece {
-        return when (color) {
-            WHITE -> WHITE_QUEEN
-            BLACK -> BLACK_QUEEN
-        }
     }
 
     override fun fetchPiece(square: square): Piece {
@@ -227,21 +217,19 @@ class Board : MutableChessBoard {
     override fun loadFen(fen: String) {
         val fen = FenString(fen)
         val easyBoard = simplifyFenBoard(fen.board)
+        loadEasyBoard(easyBoard) // this clears the enpassant
         enpassantSquare = fen.enpassantSquare
-        loadEasyBoard(easyBoard)
+        castleRights = fen.castleRights
+
     }
 
     private fun loadEasyBoard(ezBoard: String) {
-        clear()
+        bitBoards = Array<BitBoard>(12) { BitBoards.EMPTY_BB }
+        enpassantSquare = null
         for (square in Squares.range) {
             val piece = Piece.fromSymbol(ezBoard[square].toString())
             addPiece(piece, square)
         }
-    }
-
-    private fun clear() {
-        bitBoards = Array<BitBoard>(12) { BitBoards.EMPTY_BB }
-        enpassantSquare = null
     }
 
     private fun simplifyFenBoard(fenBoard: String): String {

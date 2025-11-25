@@ -13,11 +13,18 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color.*
 import javafx.scene.text.Font
 import javafx.stage.Stage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import model.board.ChessBoard
 import model.board.Color
 import model.misc.Squares
 import model.board.Piece
 import model.board.ReadOnlyBoard
+import model.game.ChessGame
+import model.game.Game
+import model.game.ReadOnlyChessGame
+import model.misc.FenString
 import model.misc.square
 
 import kotlin.jvm.javaClass
@@ -26,7 +33,7 @@ import kotlin.jvm.javaClass
 class GuiGame  {
     companion object : View {
         private const val SQUARE_DIMENSION = 67.5
-        private var viewBoard = ReadOnlyBoard() // place holding
+        private var viewGame: ReadOnlyChessGame = Game() // place holding
         var moveHighlights = setOf<Int>()
         var checkSquare = -1
         var orientation = model.board.Color.WHITE
@@ -34,8 +41,8 @@ class GuiGame  {
         var promoteColor = Color.WHITE
         var clickedSquare = -1
 
-        override fun viewBoard(board: ChessBoard) {
-            this.viewBoard = ReadOnlyBoard(board)
+        override fun viewGame(game: ReadOnlyChessGame) {
+            this.viewGame = game
         }
 
         fun promptForPromotion(color: Color) {
@@ -117,7 +124,33 @@ class GuiGame  {
 
     @FXML
     fun parseCommand() {
-        orientation == orientation.enemy
+        val text = commandLine.text
+        //commandLine.clear()
+        CoroutineScope(Dispatchers.Default).launch {
+            if (text.contains("perft")) {
+                val depth = text.split(" ")[1].toInt()
+                println("[depth $depth] from here: ${Controller.perft(
+                    Controller.game,
+                    depth,
+                    trackBranches = text.split(" ").getOrNull(2) == "track"
+                )}")
+            }
+            if (text.contains("bench")) {
+                    Controller.benchGenSpeed(1_000_000_000, FenString(Controller.game.toFen()), Controller.game.turn)
+            }
+            if (text.contains("get fen")) {
+                println("Fen: ${Controller.game.toFen()}")
+            }
+            if (text.contains("load fen")) {
+                Controller.startGameWith(FenString(text.split("\"")[1]))
+                println("Fen: ${Controller.game.toFen()}")
+            }
+            if (text.contains("count moves")) {
+                println("total moves: ${Controller.game.getMoves(Controller.game.turn!!).size}")
+            }
+        }
+        //Controller.startGameWith(FenString())
+
     }
 
     @Override
@@ -315,10 +348,10 @@ class GuiGame  {
     private fun renderPieces() {
         for (square in Squares.range) {
             if (square != clickedSquare) {
-                drawPieceAt(viewBoard.fetchPiece(square), square)
+                drawPieceAt(viewGame.getBoard().fetchPiece(square), square)
             }
         }
-            drawPieceAtMouse(viewBoard.fetchPiece(clickedSquare)) // for layering
+            drawPieceAtMouse(viewGame.getBoard().fetchPiece(clickedSquare)) // for layering
 
     }
 

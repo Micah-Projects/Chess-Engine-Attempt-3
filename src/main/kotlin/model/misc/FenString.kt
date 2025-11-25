@@ -1,5 +1,6 @@
 package model.misc
 import model.board.Color
+import model.movement.CastleRights
 import kotlin.text.isNotEmpty
 import kotlin.text.split
 
@@ -21,15 +22,24 @@ class FenString(val fen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w
     val turn: Color = if (fenComponents.size > 1 && fenComponents[1].length == 1)
     if (fenComponents[1][0]  == 'w') Color.WHITE else Color.BLACK else Color.WHITE
 
-    private val castlingBlock = fenComponents.getOrNull(2)?: ""
+    private val castlingBlock: String get() {
+        val b = fenComponents.getOrNull(2)?: ""
+        return b.ifEmpty { "-" }
+    }
 
-    val whiteCanKingCastle: Boolean = castlingBlock.getOrNull(0) == 'K'
-    val whiteCanQueenCastle: Boolean = castlingBlock.getOrNull(1) == 'Q'
-    val blackCanKingCastle: Boolean =  castlingBlock.getOrNull(2) == 'k'
-    val blackCanQueenCastle: Boolean = castlingBlock.getOrNull(3) == 'q'
+    val whiteCanKingCastle: Boolean = castlingBlock.contains("K")
+    val whiteCanQueenCastle: Boolean = castlingBlock.contains("Q")
+    val blackCanKingCastle: Boolean =  castlingBlock.contains("k")
+    val blackCanQueenCastle: Boolean = castlingBlock.contains("q")
 
-    val enpassantSquare: Int? =
-        if (fenComponents.getOrNull(3) != null && fenComponents[3] != "-" ) Squares.valueOf(fenComponents[3]) else null
+    val castleRights = CastleRights(
+        (if (whiteCanKingCastle) CastleRights.WHITE_KS else 0) or
+                (if (whiteCanQueenCastle) CastleRights.WHITE_QS else 0) or
+                (if (blackCanKingCastle) CastleRights.BLACK_KS else 0) or
+                (if (blackCanQueenCastle) CastleRights.BLACK_QS else 0)
+    )
+
+    val enpassantSquare: Int? = (if (fenComponents.getOrNull(3) != null && fenComponents[3] != "-" ) Squares.valueOf(fenComponents[3]) else null) //.also { println(it) }
 
     val numHalfMoves: Int = (fenComponents.getOrNull(4)?.toInt() ?: 0)
     val numFullMoves: Int = (fenComponents.getOrNull(5)?.toInt() ?: 0)

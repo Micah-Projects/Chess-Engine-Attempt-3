@@ -16,7 +16,7 @@ data class MakeMove(val move: move, override val game: ChessGame) : GameCommand 
 
 data class PrintStats(override val game: ChessGame) : GameCommand {
     override fun exec() {
-        println(game.currentTurn())
+        println(game.turn)
     }
 }
 

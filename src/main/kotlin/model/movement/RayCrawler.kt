@@ -55,7 +55,8 @@ object RayCrawler {
         stopDirectionIf: (RayData.() -> Boolean) = { false },
         stopAllIf: (RayData.() -> Boolean) = { false },
         maxDist: Int = MAX_DISTANCE,
-        includeStart: Boolean = false
+        includeStart: Boolean = false,
+        onStep: (RayData.()-> Unit) = {}
     ): ULong {
         var result = 0uL
         var stopAll = false
@@ -69,7 +70,7 @@ object RayCrawler {
                 }
 
                 val data = RayData(from, current, next, direction, distance)
-
+                onStep(data)
                 val willWrap = willWrap(current, next, direction)
                 val stopThisDirection = stopDirectionIf(data)
                 stopAll = stopAllIf(data)
@@ -90,26 +91,34 @@ object RayCrawler {
      * Attempts to draw a straight or diagonal line from point A to point B. if a line cant be found, it returns
      * an empty [BitBoard]. The line includes both the start and end positions
      */
-    fun lineTo(from: square, to: square, includeStart: Boolean = true, includeEnd: Boolean = false): BitBoard {
+    fun lineTo(from: square, to: square, includeStart: Boolean = true, includeEnd: Boolean = true): BitBoard {
         val direction = getDirection(from, to)
         if (direction !in queens) return 0uL
         return crawlRays(from, listOf(direction), includeStart = includeStart, stopDirectionIf = {
-            //((current == to) && !includeEnd) || (includeEnd && next == to)
-            next == to
+            current == to && includeEnd || !includeEnd && next == to
+           // next == tox
         })
     }
 
 
     fun getDirection(from: square, to: square): Int {
-        val difference = to - from
-        val direction = when {
-            Squares.rankDist(from, to) == 0 -> 1
-            difference % 8 == 0 -> 8
-            difference % 9 == 0 -> 9
-            difference % 7 == 0 -> 7
+        val sign = (to - from).sign
+        val lesserRank =  Squares.rankOf(from) < Squares.rankOf(to)
+        val lesserFile =  Squares.fileOf(from) < Squares.fileOf(to)
+        val greaterRank = Squares.rankOf(from) > Squares.rankOf(to)
+        val greaterFile = Squares.fileOf(from) > Squares.fileOf(to)
+        val sameRank = Squares.isOnSameRank(from, to)
+        val sameFile = Squares.isOnSameFile(from, to)
+        val onDiag = Squares.isOnDiagonal(from, to)
+        return when {
+            lesserRank && lesserFile && onDiag -> 9
+            greaterFile && greaterRank && onDiag -> -9
+            greaterRank && lesserFile && onDiag -> -7
+            greaterFile && lesserRank && onDiag -> 7
+            sameRank && !sameFile -> 1 * sign
+            sameFile && !sameRank -> 8 * sign
             else -> 0
         }
-        return direction * difference.sign
     }
 
     fun leap(from: square, directions: List<Int>, maxDist: Int = 1): ULong {
