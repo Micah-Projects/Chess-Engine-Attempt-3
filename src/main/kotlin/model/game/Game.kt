@@ -12,6 +12,7 @@ import model.misc.move
 import model.misc.movingPiece
 import model.movement.BitBoardMoveGenerator
 import model.movement.CastleRights
+import model.movement.InlinedBitBoardMoveGenerator
 import model.movement.MoveGenerator
 import java.util.Stack
 
@@ -41,7 +42,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
     )
 
 
-    constructor(mg: MoveGenerator = BitBoardMoveGenerator()) {
+    constructor(mg: MoveGenerator = InlinedBitBoardMoveGenerator()) {
         board = Board()
         turn = Color.WHITE
         this.mg = mg
@@ -63,7 +64,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         this.status = status
         this.winner = winner
         this.started = started
-        this.mg = BitBoardMoveGenerator()
+        this.mg = InlinedBitBoardMoveGenerator()
         validMoves = mg.generateMoves(this.board, turn)
     }
 

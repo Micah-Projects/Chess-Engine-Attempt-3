@@ -3,6 +3,8 @@ package controller
 import command.Command
 import command.MakeMove
 import command.PrintBoard
+import kotlinx.coroutines.*
+import kotlinx.coroutines.coroutineScope
 import model.board.Color
 import model.board.Piece
 import model.game.ChessGame
@@ -16,9 +18,11 @@ import model.misc.literal
 import model.misc.square
 import model.misc.to
 import model.movement.BitBoardMoveGenerator
+import model.movement.MoveGenerator
 import view.GuiGame
 import view.GuiMenu
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
 import kotlin.properties.Delegates
 import kotlin.system.exitProcess
@@ -164,6 +168,7 @@ object Controller : Features {
         }
     }
 
+    // for move calls coming from gui / user
     private fun makeMove(from: square, to: square) {
 
         val p = game.getBoard().fetchPiece(from)
@@ -257,9 +262,9 @@ object Controller : Features {
 
     }
 
-    fun benchGenSpeed(timeLimit: Long = 1_000_000_000L, position: FenString = FenString(), turn: Color = Color.WHITE) {
+    fun benchGenSpeed(timeLimit: Long = 1_000_000_000L, position: FenString = FenString(), withGenerator: MoveGenerator = BitBoardMoveGenerator(), printResult: Boolean = true): Int {
         val game = Game()
-        val mg = BitBoardMoveGenerator()
+        val mg = withGenerator
         val oneSecond = 1_000_000_000L
         game.start(position)
         var count = 0
@@ -275,16 +280,15 @@ object Controller : Features {
             count++
             now += time
         }
+        if (printResult) {
+            println("moves generated: $count times in ${timeLimit/oneSecond.toDouble()} second(s) with ${String.format("%.3f", limit / count.toDouble() )}ns per call. Using ${mg.javaClass.simpleName} ")
+        }
 
-        //  println("incs: $i")
-
-        println("moves generated: $count times in ${timeLimit/oneSecond.toDouble()} second(s) with ${String.format("%.6f", limit / count.toDouble() )}ns per call ")
+        return count
     }
 
-
-
-    fun perft(game: ReadOnlyChessGame, depth: Int, trackBranches: Boolean = false): Int {
-        val game = game.clone()
+    fun perft(game: ChessGame, depth: Int, trackBranches: Boolean = false): Int {
+       // val game = game.clone()
         val maxDepth = depth
         val rootPos = game.toFen()
 
@@ -306,6 +310,7 @@ object Controller : Features {
                 println(game.getBoard().textVisual())
                 println(game.toFen())
                 println("Error in perft at depth $depth: ${e.message}")
+                println(e.stackTrace.joinToString("\n"))
                 println("trace: ${trace.reversed().joinToString(", ")}")
                 break
             }
@@ -322,6 +327,52 @@ object Controller : Features {
         return count
     }
 
+    suspend fun perftParallel(
+        root: ChessGame,
+        depth: Int,
+        trackBranches: Boolean = false
+    ): Long = coroutineScope {
+
+        val moves = root.getMoves(root.turn)
+        val results = AtomicLong(0L)
+
+        val jobs = moves.map { move ->
+            async(Dispatchers.Default) {
+                // clone or copy your game
+                val gameCopy = root.clone() // You must implement this properly
+
+                // play root move
+                gameCopy.playMove(move)
+
+                // run normal single-thread perft
+                val count = perftRecurseSingleThread(gameCopy, depth - 1)
+
+                if (trackBranches) {
+                    println("${move.literal()}: $count")
+                }
+
+                results.addAndGet(count.toLong())
+            }
+        }
+
+        jobs.awaitAll()
+        return@coroutineScope results.get()
+    }
+
+    private fun perftRecurseSingleThread(
+        game: ChessGame,
+        depth: Int
+    ): Int {
+        if (depth == 0) return 1
+
+        var count = 0
+        for (move in game.getMoves(game.turn)) {
+            game.playMove(move)
+            count += perftRecurseSingleThread(game, depth - 1)
+            game.undoMove()
+        }
+        return count
+    }
 //    fun perft(depth: Int, game: Game) {
 //        val game = game.clone()
 //       // perd

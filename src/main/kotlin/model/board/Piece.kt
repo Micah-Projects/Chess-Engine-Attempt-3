@@ -5,7 +5,7 @@ import model.misc.Debug
 /**
  * A chess piece.
  */
-enum class Piece(val value: Int, val type: Type, val symbol: String) {
+enum class Piece(val id: Int, val type: Type, val symbol: String) {
 
     EMPTY(-1, Type.NONE," "),
     WHITE_PAWN(0, Type.PAWN, "P"),
@@ -69,7 +69,7 @@ enum class Piece(val value: Int, val type: Type, val symbol: String) {
         fun fromSymbol(symbol: String): Piece {
             for (piece in playable) {
                 if (piece.symbol() == symbol) {
-                    Debug.log(Debug.Area.PIECE) { " $piece parsed from $symbol " }
+                    //Debug.log(Debug.Area.PIECE) { " $piece parsed from $symbol " }
                     return piece
                 }
             }
@@ -87,12 +87,12 @@ enum class Piece(val value: Int, val type: Type, val symbol: String) {
     /**
      * Returns whether this piece is empty.
      */
-    fun isEmpty(): Boolean = value == -1
+    fun isEmpty(): Boolean = id == -1
 
     /**
      * Returns whether this piece is empty.
      */
-    fun isNotEmpty(): Boolean = value != -1
+    fun isNotEmpty(): Boolean = id != -1
 
     /**
      * Returns whether this piece is a pawn.
@@ -127,12 +127,12 @@ enum class Piece(val value: Int, val type: Type, val symbol: String) {
     /**
      * Returns whether this piece is white.
      */
-    fun isWhite(): Boolean = value <= 5
+    fun isWhite(): Boolean = id <= 5
 
     /**
      * Returns whether this piece is black.
      */
-    fun isBlack(): Boolean = value >= 6
+    fun isBlack(): Boolean = id >= 6
 
     fun isSlider(): Boolean = isBishop() || isQueen() || isRook()
 

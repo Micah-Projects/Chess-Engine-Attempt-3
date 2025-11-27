@@ -2,10 +2,8 @@ package model.board
 
 import model.board.Piece.*
 import model.board.Color.*
-import model.misc.Debug.Area.*
 import model.misc.BitBoard
 import model.misc.BitBoards
-import model.misc.Debug
 import model.misc.FenString
 import model.misc.Squares
 import model.misc.from
@@ -37,13 +35,12 @@ class Board : MutableChessBoard {
     override fun addPiece(piece: Piece, square: square) {
         require(isInBounds(square)) { "Cannot add piece on out-of-bounds square: $square " }
         if (piece.isEmpty()) return
-        val i = piece.value
+        val i = piece.id
         val targetBB = bitBoards[i]
         for (bb in bitBoards.indices) {
             bitBoards[bb] = BitBoards.removeBit(bitBoards[bb], square)
         }
         bitBoards[i] = BitBoards.addBit(targetBB, square)
-        Debug.log(BOARD) { "$piece added on $square (${Squares.asText(square)})" }
     }
 
     override fun removePiece(square: square) {
@@ -78,10 +75,6 @@ class Board : MutableChessBoard {
             enpassantSquare = null
             removePiece(start)
             addPiece(piece, end)
-        }
-
-        Debug.log(BOARD) {
-            "$piece moved from $start -> $end : ${Squares.asText(start)} -> ${Squares.asText(end)}"
         }
     }
 
@@ -168,13 +161,13 @@ class Board : MutableChessBoard {
 
     override fun fetchPieceBitBoard(pieceType: Piece): BitBoard {
         require(pieceType.isNotEmpty()) { "There is no bit board for ${Piece.EMPTY}." }
-        return bitBoards[pieceType.value]
+        return bitBoards[pieceType.id]
     }
 
     override fun fetchPieceMask(vararg pieces: Piece): BitBoard {
         var mask = 0uL
         for (piece in pieces) {
-            mask = mask or bitBoards[piece.value]
+            mask = mask or bitBoards[piece.id]
         }
         return mask
     }

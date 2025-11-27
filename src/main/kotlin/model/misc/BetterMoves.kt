@@ -21,7 +21,7 @@ private const val CAPTURE_SELECTOR = 0b1 shl CAPTURE_SHIFT
 
 object BetterMoves {                                    // promotion = pawn to remove boolean checking for NONE
     fun encode(movingPiece: Piece, from: square, to: square, promotion: Type = Type.PAWN, isCapture: Boolean = false): move {
-        return  (movingPiece.value shl MOVING_PIECE_SHIFT) or
+        return  (movingPiece.id shl MOVING_PIECE_SHIFT) or
                 (from shl FROM_SHIFT) or
                 (to shl TO_SHIFT) or
                 (promotion.value shl PROMOTION_SHIFT) or

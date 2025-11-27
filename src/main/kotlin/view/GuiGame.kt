@@ -16,16 +16,15 @@ import javafx.stage.Stage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import model.board.ChessBoard
 import model.board.Color
 import model.misc.Squares
 import model.board.Piece
-import model.board.ReadOnlyBoard
-import model.game.ChessGame
 import model.game.Game
 import model.game.ReadOnlyChessGame
 import model.misc.FenString
 import model.misc.square
+import model.movement.BitBoardMoveGenerator
+import model.movement.InlinedBitBoardMoveGenerator
 
 import kotlin.jvm.javaClass
 
@@ -129,14 +128,31 @@ class GuiGame  {
         CoroutineScope(Dispatchers.Default).launch {
             if (text.contains("perft")) {
                 val depth = text.split(" ")[1].toInt()
-                println("[depth $depth] from here: ${Controller.perft(
+                println("[depth $depth] from here: ${Controller.perftParallel(
                     Controller.game,
                     depth,
                     trackBranches = text.split(" ").getOrNull(2) == "track"
                 )}")
             }
             if (text.contains("bench")) {
-                    Controller.benchGenSpeed(1_000_000_000, FenString(Controller.game.toFen()), Controller.game.turn)
+                val fen = FenString(Controller.game.toFen())
+                val rep = text.split(" ").getOrNull(1)?.toInt() ?: 1
+                println("benching...")
+                var bbmg = 0.0
+                var ibbmg = 0.0
+                repeat (rep) {
+                    bbmg += Controller.benchGenSpeed(1_000_000_000, fen, BitBoardMoveGenerator(), printResult = false)
+                    ibbmg += Controller.benchGenSpeed(1_000_000_000, fen, InlinedBitBoardMoveGenerator(), printResult = false)
+                }
+
+                val avgBBMG = bbmg / rep
+                val avgIBBMG = ibbmg / rep
+
+                val percent = String.format("%.3f",  ((avgIBBMG/avgBBMG) * 100) - 100)
+                println("bbmg: $avgBBMG moves per rep")
+                println("ibbmg: $avgIBBMG moves per rep")
+                println("IBBMG runs at $percent% faster than BBMG")
+
             }
             if (text.contains("get fen")) {
                 println("Fen: ${Controller.game.toFen()}")
@@ -320,7 +336,7 @@ class GuiGame  {
 
     private fun drawPieceAtMouse(piece: Piece) {
         if (!piece.isEmpty()) {
-            val image = imageIndex[piece.value]
+            val image = imageIndex[piece.id]
             paintBrush.drawImage(
                 image,
                 mouseX,
@@ -334,7 +350,7 @@ class GuiGame  {
     private fun drawPieceAt(piece: Piece, file: square, rank: square) {
         val (file, rank) = orient(file, rank)
         if (!piece.isEmpty()) {
-            val image = imageIndex[piece.value]
+            val image = imageIndex[piece.id]
             paintBrush.drawImage(
                 image,
                 file * SQUARE_DIMENSION,
