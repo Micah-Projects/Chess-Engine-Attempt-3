@@ -1,4 +1,4 @@
-package model.misc
+package model.utils
 
 /**
  * A Type-alias for [ULong] which represents chess bit boards.

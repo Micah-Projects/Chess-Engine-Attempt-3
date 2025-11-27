@@ -1,8 +1,7 @@
 package command
 
-import model.board.Color
 import model.game.ChessGame
-import model.misc.move
+import model.movement.move
 
 interface GameCommand : Command {
     val game: ChessGame

@@ -5,13 +5,13 @@ import model.board.ChessBoard
 import model.board.Color
 import model.board.Piece
 import model.board.Piece.Type
-import model.misc.BetterMoves
-import model.misc.BitBoard
-import model.misc.BitBoards
-import model.misc.BitBoards.binaryFill
-import model.misc.Squares
-import model.misc.move
-import model.misc.square
+import model.utils.BitBoard
+import model.utils.BitBoards
+import model.utils.BitBoards.binaryFill
+import model.utils.MagicGenerator
+import model.utils.RayCrawler
+import model.utils.Squares
+import model.utils.square
 import kotlin.math.abs
 
 class InlinedBitBoardMoveGenerator : MoveGenerator {
@@ -245,7 +245,7 @@ class InlinedBitBoardMoveGenerator : MoveGenerator {
 
         attackMask = attackMask and friendlyOccupancy.inv() // pieces can never hurt their team
         BitBoards.iterateBits(attackMask) { attack ->
-            moveBuffer[pointer++] = BetterMoves.encode(piece,position, attack)
+            moveBuffer[pointer++] = Moves.encode(piece,position, attack)
         }
     }
 
@@ -415,12 +415,12 @@ class InlinedBitBoardMoveGenerator : MoveGenerator {
         val safeMask = accountedForKingSafety(piece,from, 1uL shl from, attackMask)
         if (safeMask and attackMask != 0uL) {
             if (promotion) {
-                moveBuffer[pointer++] = BetterMoves.encode(piece, from, to, Type.ROOK)
-                moveBuffer[pointer++] = BetterMoves.encode(piece, from, to, Type.QUEEN)
-                moveBuffer[pointer++] = BetterMoves.encode(piece, from, to, Type.BISHOP)
-                moveBuffer[pointer++] = BetterMoves.encode(piece, from, to, Type.KNIGHT)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.ROOK)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.QUEEN)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.BISHOP)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.KNIGHT)
             } else {
-                moveBuffer[pointer++] = BetterMoves.encode(piece, from, to)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to)
             }
 
         }

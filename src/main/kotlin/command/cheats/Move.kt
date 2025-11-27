@@ -2,7 +2,7 @@ package command.cheats
 
 import command.BoardCommand
 import model.board.MutableChessBoard
-import model.misc.move
+import model.movement.move
 
 data class Move(val move: move, override val board: MutableChessBoard) : BoardCommand {
     override fun exec() {

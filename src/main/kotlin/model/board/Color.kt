@@ -1,6 +1,6 @@
 package model.board
 
-import model.misc.Debug
+import model.utils.Debug
 
 /**
  * The colors for two chess players.

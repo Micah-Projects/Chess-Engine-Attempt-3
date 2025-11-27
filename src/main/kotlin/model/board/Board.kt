@@ -2,16 +2,15 @@ package model.board
 
 import model.board.Piece.*
 import model.board.Color.*
-import model.misc.BitBoard
-import model.misc.BitBoards
-import model.misc.FenString
-import model.misc.Squares
-import model.misc.from
-import model.misc.move
-import model.misc.promotionType
-import model.misc.square
-import model.misc.to
-import model.movement.CastleRights
+import model.utils.BitBoard
+import model.utils.BitBoards
+import model.utils.FenString
+import model.utils.Squares
+import model.movement.from
+import model.movement.move
+import model.movement.promotionType
+import model.utils.square
+import model.movement.to
 import kotlin.math.abs
 
 class Board : MutableChessBoard {

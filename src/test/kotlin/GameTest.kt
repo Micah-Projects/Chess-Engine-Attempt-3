@@ -1,6 +1,5 @@
 import model.game.Game
 import model.game.GameStatus
-import model.misc.FenString
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
 import kotlin.test.assertEquals

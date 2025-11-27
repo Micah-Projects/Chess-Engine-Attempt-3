@@ -1,7 +1,10 @@
-package model.misc
+package model.movement
 
 import model.board.Piece
 import model.board.Piece.Type
+import model.utils.Squares
+import model.utils.square
+
 typealias move = Int
 
 private const val MOVING_PIECE_SHIFT = 0 // 4 bits
@@ -19,7 +22,7 @@ private const val TO_SELECTOR =  0b111111 shl TO_SHIFT // 0-64
 private const val PROMOTION_SELECTOR = 0b111 shl PROMOTION_SHIFT
 private const val CAPTURE_SELECTOR = 0b1 shl CAPTURE_SHIFT
 
-object BetterMoves {                                    // promotion = pawn to remove boolean checking for NONE
+object Moves {                                    // promotion = pawn to remove boolean checking for NONE
     fun encode(movingPiece: Piece, from: square, to: square, promotion: Type = Type.PAWN, isCapture: Boolean = false): move {
         return  (movingPiece.id shl MOVING_PIECE_SHIFT) or
                 (from shl FROM_SHIFT) or
@@ -31,9 +34,9 @@ object BetterMoves {                                    // promotion = pawn to r
 
 fun move.from(): Int = (this and FROM_SELECTOR) shr FROM_SHIFT
 fun move.to(): Int = (this and TO_SELECTOR) shr TO_SHIFT
-fun move.promotionType(): Piece.Type   {
+fun move.promotionType(): Type   {
     val type = ((this and PROMOTION_SELECTOR) shr PROMOTION_SHIFT)
-    return if (type == 0) Piece.Type.NONE else Type.promotions[type - 1]
+    return if (type == 0) Type.NONE else Type.promotions[type - 1]
 }
 fun move.isCapture(): Boolean = (this and CAPTURE_SELECTOR) shr CAPTURE_SHIFT == 1
 fun move.literal(): String = "${Squares.asText(from())}${Squares.asText(to())}${(if (promotionType() != Type.NONE) Piece.from(promotionType(), movingPiece().color).symbol else "") }"

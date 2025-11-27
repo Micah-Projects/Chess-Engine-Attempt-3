@@ -1,6 +1,6 @@
-package model.misc
+package model.utils
 import model.board.Color
-import model.movement.CastleRights
+import model.board.CastleRights
 import kotlin.text.isNotEmpty
 import kotlin.text.split
 

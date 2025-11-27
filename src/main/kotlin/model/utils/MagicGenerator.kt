@@ -1,17 +1,15 @@
-package model.movement
+package model.utils
 
 import model.board.Piece
-import model.misc.BitBoards.binaryFill
-import model.misc.Squares
 import java.io.File
 import kotlin.random.Random
 import kotlin.random.nextULong
 import kotlin.system.exitProcess
-
+import Config
 
 object MagicGenerator {
 val mgSliders = 2
-    private const val FILE_PATH = "src/main/kotlin/model/movement/MagicKeys.txt"
+
     private var hasCache = false
     private var currentCache: Array<Array<ULong>> = Array(0) { Array(0) { 0uL } }
 
@@ -25,7 +23,7 @@ val mgSliders = 2
     }
 
     private fun readMagics(): Array<Array<ULong>> {
-        val file = File(FILE_PATH)
+        val file = File(Config.MAGIC_KEYS_FILE_PATH)
         require(file.exists()) {
             "Cannot retrieve magic keys. Must call genMagics() first."
         }
@@ -44,23 +42,23 @@ val mgSliders = 2
 
     fun genMagics() {
         try {
-            val file = File(FILE_PATH)
+            val file = File(Config.MAGIC_KEYS_FILE_PATH)
             if (file.exists()) {
                 return
             } else {
                 val sliderMasks = Array<Array<ULong>>(mgSliders) { idx ->
-                    val piece = Piece.sliders[idx]
+                    val piece = Piece.Companion.sliders[idx]
                     Array(Squares.COUNT) { square ->
                         RayCrawler.crawlExcludeEdge(square, RayCrawler.getRays(piece))
                     }
                 }
                 val sliderBlockerSets = Array<Array<Array<ULong>>>(mgSliders) { idx ->
                     Array(Squares.COUNT) { square ->
-                        binaryFill(sliderMasks[idx][square])
+                        BitBoards.binaryFill(sliderMasks[idx][square])
                     }
                 }
                 val sliderMagics = Array<Array<ULong>>(mgSliders) { idx ->
-                    val piece = Piece.sliders[idx] // will be rook or bishop
+                    val piece = Piece.Companion.sliders[idx] // will be rook or bishop
                     Array(Squares.COUNT) { square ->
                         var found = false
                         var magic: ULong = 0uL
@@ -70,7 +68,7 @@ val mgSliders = 2
 
                         while (!found) {
                             val foundHashes = HashSet<Int>()
-                            magic = Random.nextULong() and Random.nextULong() and Random.nextULong()
+                            magic = Random.Default.nextULong() and Random.Default.nextULong() and Random.Default.nextULong()
 
                             for (blockerConfig in blockersForSquare) {
                                 val occupancy = blockerConfig and sliderMasks[idx][square]

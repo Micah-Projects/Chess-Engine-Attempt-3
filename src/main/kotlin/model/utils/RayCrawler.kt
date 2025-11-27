@@ -1,12 +1,6 @@
-package model.movement
-
+package model.utils
 
 import model.board.Piece
-import model.board.Piece.Type
-import model.misc.BitBoard
-import model.misc.BitBoards
-import model.misc.Squares
-import model.misc.square
 import kotlin.math.sign
 
 /**
@@ -154,12 +148,12 @@ object RayCrawler {
             else -> listOf()
         }
     }
-    fun getRays(pieceType: Type): List<Int> {
+    fun getRays(pieceType: Piece.Type): List<Int> {
         return when (pieceType) {
-            Type.ROOK -> rooks
-            Type.QUEEN -> queens
-            Type.BISHOP -> diagonals
-            Type.KNIGHT -> knights
+            Piece.Type.ROOK -> rooks
+            Piece.Type.QUEEN -> queens
+            Piece.Type.BISHOP -> diagonals
+            Piece.Type.KNIGHT -> knights
             //   piece.isKing() -> RayCrawler
             else -> listOf()
         }

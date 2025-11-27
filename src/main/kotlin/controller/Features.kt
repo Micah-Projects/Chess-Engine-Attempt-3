@@ -1,7 +1,6 @@
 package controller
 
-import model.misc.Squares
-import model.misc.square
+import model.utils.square
 
 interface Features {
     fun tryMove(from: square, to: square)

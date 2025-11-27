@@ -5,15 +5,14 @@ import model.board.ChessBoard
 import model.board.Color
 import model.board.Piece
 import model.board.Piece.Type
-import model.misc.BetterMoves
-import model.misc.BitBoard
-import model.misc.BitBoards
-import model.misc.BitBoards.binaryFill
-import model.misc.BitBoards.getSetBitIndices
-import model.misc.Squares
-import model.misc.move
-import model.misc.square
-import kotlin.math.abs
+import model.utils.BitBoard
+import model.utils.BitBoards
+import model.utils.BitBoards.binaryFill
+import model.utils.BitBoards.getSetBitIndices
+import model.utils.MagicGenerator
+import model.utils.RayCrawler
+import model.utils.Squares
+import model.utils.square
 
 
 class BitBoardMoveGenerator : MoveGenerator {
@@ -308,7 +307,7 @@ class BitBoardMoveGenerator : MoveGenerator {
 
         attackMask = attackMask and friendlyOccupancy.inv() // pieces can never hurt their team
         BitBoards.iterateBits(attackMask) { attack ->
-            addMove(BetterMoves.encode(piece,position, attack))
+            addMove(Moves.encode(piece,position, attack))
         }
     }
 
@@ -479,12 +478,12 @@ class BitBoardMoveGenerator : MoveGenerator {
         val safeMask = accountedForKingSafety(piece,from, attackMask)
         if ((safeMask and (1uL shl to)) != 0uL) {
             if (promotion) {
-                addMove(BetterMoves.encode(piece, from, to, Type.ROOK))
-                addMove(BetterMoves.encode(piece, from, to, Type.QUEEN))
-                addMove(BetterMoves.encode(piece, from, to, Type.BISHOP))
-                addMove(BetterMoves.encode(piece, from, to, Type.KNIGHT))
+                addMove(Moves.encode(piece, from, to, Type.ROOK))
+                addMove(Moves.encode(piece, from, to, Type.QUEEN))
+                addMove(Moves.encode(piece, from, to, Type.BISHOP))
+                addMove(Moves.encode(piece, from, to, Type.KNIGHT))
             } else {
-                addMove(BetterMoves.encode(piece, from, to))
+                addMove(Moves.encode(piece, from, to))
             }
 
         }

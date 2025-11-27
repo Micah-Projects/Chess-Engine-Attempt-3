@@ -1,9 +1,7 @@
 package model.game
 
-import model.board.ChessBoard
-import model.board.Color
-import model.misc.FenString
-import model.misc.move
+import model.utils.FenString
+import model.movement.move
 
 /**
  * An interface for all classes which will conduct chess games.

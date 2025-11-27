@@ -1,7 +1,5 @@
 package model.board
 
-import model.misc.Debug
-
 /**
  * A chess piece.
  */

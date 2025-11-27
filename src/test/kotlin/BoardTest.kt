@@ -2,7 +2,7 @@ import model.board.MutableChessBoard
 import model.board.Board
 import model.board.Piece
 import model.board.Piece.*
-import model.misc.Debug
+import model.utils.Debug
 import org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.Test

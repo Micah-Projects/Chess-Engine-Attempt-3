@@ -2,7 +2,7 @@ package model.game
 
 import model.board.ChessBoard
 import model.board.Color
-import model.misc.move
+import model.movement.move
 
 interface ReadOnlyChessGame {
 

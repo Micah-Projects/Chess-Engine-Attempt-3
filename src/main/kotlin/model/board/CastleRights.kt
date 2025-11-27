@@ -1,6 +1,4 @@
-package model.movement
-
-import model.board.Color
+package model.board
 
 @JvmInline
 value class CastleRights(val bits: Int) {
@@ -29,5 +27,3 @@ value class CastleRights(val bits: Int) {
         }
     }
 }
-
-

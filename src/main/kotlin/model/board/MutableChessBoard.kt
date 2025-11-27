@@ -1,7 +1,6 @@
 package model.board
 
-import model.misc.BitBoard
-import model.misc.move
+import model.movement.move
 
 /**
  * An interface for chess boards.

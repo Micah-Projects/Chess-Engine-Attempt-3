@@ -17,12 +17,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import model.board.Color
-import model.misc.Squares
+import model.utils.Squares
 import model.board.Piece
 import model.game.Game
 import model.game.ReadOnlyChessGame
-import model.misc.FenString
-import model.misc.square
+import model.utils.FenString
+import model.utils.square
 import model.movement.BitBoardMoveGenerator
 import model.movement.InlinedBitBoardMoveGenerator
 

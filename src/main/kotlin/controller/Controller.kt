@@ -9,14 +9,13 @@ import model.board.Color
 import model.board.Piece
 import model.game.ChessGame
 import model.game.Game
-import model.game.ReadOnlyChessGame
-import model.misc.BetterMoves
-import model.misc.FenString
-import model.misc.Squares
-import model.misc.from
-import model.misc.literal
-import model.misc.square
-import model.misc.to
+import model.movement.Moves
+import model.utils.FenString
+import model.utils.Squares
+import model.movement.from
+import model.movement.literal
+import model.utils.square
+import model.movement.to
 import model.movement.BitBoardMoveGenerator
 import model.movement.MoveGenerator
 import view.GuiGame
@@ -189,7 +188,7 @@ object Controller : Features {
 
         if (moveAllowed) {
             val pro = promotion ?: Piece.Type.PAWN
-            commandQueue.add(MakeMove(BetterMoves.encode(p, from, to, pro), game))
+            commandQueue.add(MakeMove(Moves.encode(p, from, to, pro), game))
             promotion = null
         }
     }

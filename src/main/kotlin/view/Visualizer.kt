@@ -1,8 +1,7 @@
 package view
 
 import model.board.Color
-import model.board.Piece
-import model.misc.square
+import model.utils.square
 
 interface Visualizer {
 

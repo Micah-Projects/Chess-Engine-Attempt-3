@@ -1,7 +1,6 @@
 package model.board
 
-import model.misc.BitBoard
-import model.movement.CastleRights
+import model.utils.BitBoard
 
 class ReadOnlyBoard(private val board: ChessBoard = Board()) : ChessBoard {
 

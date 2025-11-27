@@ -1,8 +1,6 @@
-package model.misc
-import model.board.Board
+package model.utils
 
 import kotlin.math.abs
-import kotlin.math.sign
 import kotlin.random.Random
 
 

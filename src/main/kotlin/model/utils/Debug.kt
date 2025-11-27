@@ -1,4 +1,4 @@
-package model.misc
+package model.utils
 
 import java.util.concurrent.ConcurrentHashMap
 

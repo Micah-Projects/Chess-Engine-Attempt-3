@@ -1,4 +1,4 @@
-import model.misc.Squares
+import model.utils.Squares
 import org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.*

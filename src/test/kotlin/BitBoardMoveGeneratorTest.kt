@@ -1,11 +1,7 @@
-import command.cheats.Move
 import model.board.Color
 import model.game.ChessGame
 import model.game.Game
-import model.misc.BitBoards
-import model.misc.FenString
-import model.misc.Squares
-import model.misc.square
+import model.utils.FenString
 import model.movement.BitBoardMoveGenerator
 import model.movement.MoveGenerator
 import kotlin.test.Test
