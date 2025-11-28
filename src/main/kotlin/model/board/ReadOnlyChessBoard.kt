@@ -1,0 +1,72 @@
+package model.board
+
+import model.utils.BitBoard
+
+interface ReadOnlyChessBoard {
+
+    /**
+     * Returns the piece on the given [square].
+     * @param square The square index (0–63).
+     * @return [Piece] on this square.
+     */
+    fun fetchPiece(square: Int): Piece
+
+    /**
+     * @return The [BitBoard] of the given [pieceType].
+     */
+    fun fetchPieceBitBoard(pieceType: Piece): BitBoard
+
+    /**
+     * @return a combined [BitBoard] representing all the specified pieces' positions
+     */
+    fun fetchPieceMask(vararg pieces: Piece): BitBoard
+
+    /**
+     * @return an array containing all bitboards used by the board
+     */
+    fun fetchBitboards(): Array<BitBoard>
+
+    /**
+     * @return a [BitBoard] representing the positions occupied by [color].
+     * If color is null, the entire occupancy is retrieved.
+     */
+    fun getOccupancy(color: Color? = null): ULong
+
+    /**
+     * @return the current castling rights of the board.
+     */
+    fun getCastleRights(): CastleRights
+
+    /**
+     * @return a [BitBoard] representing all empty squares on the board.
+     */
+    fun fetchEmptySquares(): ULong
+
+    /**
+     * Returns the current En-Passant Square on this board.
+     * @return The Square at which En-Passant is possible.
+     */
+    fun fetchEnpassantSquare(): Int?
+
+    /**
+     * Creates a clone of this ChessBoard.
+     * @return [ChessBoard]
+     */
+    fun clone(): ChessBoard
+
+    /**
+     * @return The FEN string representation of this board.
+     */
+    fun toFen(): String
+
+    /**
+     * Gets a string representation of this ChessBoard.
+     * @return [String]
+     */
+    fun textVisual(viewFrom: Color = Color.WHITE): String
+
+    /**
+     * Returns a new mutable instance with this board data.
+     */
+    fun toMutable(): ChessBoard
+}

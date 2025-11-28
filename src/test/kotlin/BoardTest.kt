@@ -1,4 +1,4 @@
-import model.board.MutableChessBoard
+import model.board.ChessBoard
 import model.board.Board
 import model.board.Piece
 import model.board.Piece.*
@@ -19,7 +19,7 @@ import kotlin.test.assertNotEquals
  * A class containing tests for [Board].
  */
 class BoardTest {
-    lateinit var board: MutableChessBoard
+    lateinit var board: ChessBoard
     lateinit var random: Random
 
     @BeforeEach

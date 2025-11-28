@@ -1,13 +1,13 @@
 package command
 
 import model.game.ChessGame
-import model.movement.move
+import model.movement.Move
 
 interface GameCommand : Command {
     val game: ChessGame
 }
 
-data class MakeMove(val move: move, override val game: ChessGame) : GameCommand {
+data class MakeMove(val move: Move, override val game: ChessGame) : GameCommand {
     override fun exec() {
         game.playMove(move)
     }

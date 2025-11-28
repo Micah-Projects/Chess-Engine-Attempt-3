@@ -7,13 +7,13 @@ import model.utils.BitBoards
 import model.utils.FenString
 import model.utils.Squares
 import model.movement.from
-import model.movement.move
+import model.movement.Move
 import model.movement.promotionType
 import model.utils.square
 import model.movement.to
 import kotlin.math.abs
 
-class Board : MutableChessBoard {
+class Board : ChessBoard {
 
     private var bitBoards: Array<BitBoard>
     private var enpassantSquare: square?
@@ -50,7 +50,7 @@ class Board : MutableChessBoard {
     }
 
 
-    override fun makeMove(move: move) {
+    override fun makeMove(move: Move) {
         movePiece(move.from(), move.to(), move.promotionType())
     }
 
@@ -202,7 +202,7 @@ class Board : MutableChessBoard {
 
     private fun isInBounds(square: square) = square in Squares.range
 
-    override fun clone(): MutableChessBoard {
+    override fun clone(): ChessBoard {
         return Board(bitBoards, enpassantSquare, castleRights)
     }
 
@@ -293,7 +293,7 @@ class Board : MutableChessBoard {
         return if (viewFrom == Color.WHITE) board.toString() else board.toString().reversed()
     }
 
-    override fun toMutable(): MutableChessBoard {
+    override fun toMutable(): ChessBoard {
         return this.clone()
     }
 }

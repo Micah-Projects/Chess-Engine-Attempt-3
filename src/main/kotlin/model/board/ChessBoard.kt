@@ -1,72 +1,43 @@
 package model.board
 
-import model.utils.BitBoard
+import model.movement.Move
 
-interface ChessBoard {
-
+/**
+ * An interface for chess boards.
+ */
+interface ChessBoard : ReadOnlyChessBoard {
     /**
-     * Returns the piece on the given [square].
+     * Adds a [piece] onto the given [square].
      * @param square The square index (0–63).
-     * @return [Piece] on this square.
+     * @param piece The chess piece
      */
-    fun fetchPiece(square: Int): Piece
+    fun addPiece(piece: Piece, square: Int)
 
     /**
-     * @return The [BitBoard] of the given [pieceType].
+     * Removes the piece on the given [square].
+     * @param square The square index (0–63).
      */
-    fun fetchPieceBitBoard(pieceType: Piece): BitBoard
+    fun removePiece(square: Int)
 
     /**
-     * @return a combined [BitBoard] representing all the specified pieces' positions
+     * Moves a piece from [start] to [end] regardless of legality.
+     * @param start Start square index
+     * @param end End square index
      */
-    fun fetchPieceMask(vararg pieces: Piece): BitBoard
+    fun movePiece(start: Int, end: Int)
 
     /**
-     * @return an array containing all bitboards used by the board
+     * Makes a legal move on the board.
+     * @param [move] An encoded Int containing start, end, and various move flags.
      */
-    fun fetchBitboards(): Array<BitBoard>
+    fun makeMove(move: Move)
 
     /**
-     * @return a [BitBoard] representing the positions occupied by [color].
-     * If color is null, the entire occupancy is retrieved.
+     * Loads a board state from the given [fen] string.
+     * @param fen Forsyth–Edwards Notation string representing a board state.
      */
-    fun getOccupancy(color: Color? = null): ULong
+    fun loadFen(fen: String)
 
-    /**
-     * @return the current castling rights of the board.
-     */
-    fun getCastleRights(): CastleRights
 
-    /**
-     * @return a [BitBoard] representing all empty squares on the board.
-     */
-    fun fetchEmptySquares(): ULong
 
-    /**
-     * Returns the current En-Passant Square on this board.
-     * @return The Square at which En-Passant is possible.
-     */
-    fun fetchEnpassantSquare(): Int?
-
-    /**
-     * Creates a clone of this ChessBoard.
-     * @return [MutableChessBoard]
-     */
-    fun clone(): MutableChessBoard
-
-    /**
-     * @return The FEN string representation of this board.
-     */
-    fun toFen(): String
-
-    /**
-     * Gets a string representation of this ChessBoard.
-     * @return [String]
-     */
-    fun textVisual(viewFrom: Color = Color.WHITE): String
-
-    /**
-     * Returns a new mutable instance with this board data.
-     */
-    fun toMutable(): MutableChessBoard
 }

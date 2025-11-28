@@ -1,13 +1,12 @@
 package command
 
-import model.board.ChessBoard
-import model.board.MutableChessBoard
+import model.board.ReadOnlyChessBoard
 
 interface BoardCommand : Command {
-    val board: ChessBoard
+    val board: ReadOnlyChessBoard
 }
 
-data class PrintBoard(override val board: ChessBoard) : BoardCommand {
+data class PrintBoard(override val board: ReadOnlyChessBoard) : BoardCommand {
     override fun exec() {
         println(board.textVisual())
     }

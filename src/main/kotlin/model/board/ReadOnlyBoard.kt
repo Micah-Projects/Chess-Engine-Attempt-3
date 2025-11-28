@@ -2,7 +2,7 @@ package model.board
 
 import model.utils.BitBoard
 
-class ReadOnlyBoard(private val board: ChessBoard = Board()) : ChessBoard {
+class ReadOnlyBoard(private val board: ReadOnlyChessBoard = Board()) : ReadOnlyChessBoard {
 
     override fun fetchPiece(square: Int): Piece {
         return board.fetchPiece(square)
@@ -36,7 +36,7 @@ class ReadOnlyBoard(private val board: ChessBoard = Board()) : ChessBoard {
         return board.fetchEnpassantSquare()
     }
 
-    override fun clone(): MutableChessBoard {
+    override fun clone(): ChessBoard {
         return board.clone()
     }
 
@@ -48,7 +48,7 @@ class ReadOnlyBoard(private val board: ChessBoard = Board()) : ChessBoard {
         return board.textVisual(viewFrom)
     }
 
-    override fun toMutable(): MutableChessBoard {
+    override fun toMutable(): ChessBoard {
         return board.toMutable()
     }
 }

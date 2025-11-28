@@ -1,7 +1,8 @@
 package model.game
 
+import model.board.Color
 import model.utils.FenString
-import model.movement.move
+import model.movement.Move
 
 /**
  * An interface for all classes which will conduct chess games.
@@ -14,6 +15,11 @@ interface ChessGame : ReadOnlyChessGame {
     fun start(fen: FenString = FenString()): ChessGame
 
     /**
+     * Force ends the game.
+     */
+    fun end(reason: GameStatus = GameStatus.UNKNOWN, setWinner: Color? = null)
+
+    /**
      * undoes the most recently made move.
      */
     fun undoMove(): ChessGame
@@ -24,6 +30,6 @@ interface ChessGame : ReadOnlyChessGame {
      * IllegalArgumentException is thrown.
      */
     @Throws(IllegalArgumentException::class)
-    fun playMove(move: move): ChessGame
+    fun playMove(move: Move): ChessGame
 
 }

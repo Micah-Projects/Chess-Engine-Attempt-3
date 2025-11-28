@@ -23,7 +23,7 @@ class GameTest {
     @Test
     fun playUntil50MoveRule() {
         game.start()
-        while (!game.isOver()) {
+        while (!game.isOngoing()) {
             game.playMove(game.getMoves(game.currentTurn()).random())
             println(game.getBoard().textVisual())
         }

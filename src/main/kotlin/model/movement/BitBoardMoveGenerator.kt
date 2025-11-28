@@ -1,7 +1,7 @@
 package model.movement
 
 import model.board.Board
-import model.board.ChessBoard
+import model.board.ReadOnlyChessBoard
 import model.board.Color
 import model.board.Piece
 import model.board.Piece.Type
@@ -94,7 +94,7 @@ class BitBoardMoveGenerator : MoveGenerator {
     private var pointer = 0 // index into our move stack
     private var moveBuffer: IntArray = IntArray(218) { -1 }
 
-    private var board: ChessBoard = Board()
+    private var board: ReadOnlyChessBoard = Board()
     private var enemyOccupancy = 0uL
     private var friendlyOccupancy = 0uL
     private var totalOccupancy = 0uL
@@ -230,7 +230,7 @@ class BitBoardMoveGenerator : MoveGenerator {
         check = enemyAttackMask and (1uL shl kingPosition) != 0uL // check if being attacked
     }
 
-    private fun genMoves(board: ChessBoard, color: Color) {
+    private fun genMoves(board: ReadOnlyChessBoard, color: Color) {
         this.board = board
         this.genColor = color
         this.pointer = 0 // act as a clear
@@ -248,8 +248,8 @@ class BitBoardMoveGenerator : MoveGenerator {
         }
     }
 
-    override fun generateMoves(board: ChessBoard, color: Color): List<move> {
-        val result = mutableListOf<move>()
+    override fun generateMoves(board: ReadOnlyChessBoard, color: Color): List<Move> {
+        val result = mutableListOf<Move>()
         genMoves(board, color)
         var i = 0
         while (i < pointer) {
@@ -464,7 +464,7 @@ class BitBoardMoveGenerator : MoveGenerator {
         }
     }
 
-    private fun addMove(move: move) {
+    private fun addMove(move: Move) {
         moveBuffer[pointer++] = move
     }
 

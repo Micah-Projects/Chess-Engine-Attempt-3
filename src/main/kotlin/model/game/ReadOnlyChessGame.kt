@@ -1,15 +1,15 @@
 package model.game
 
-import model.board.ChessBoard
+import model.board.ReadOnlyChessBoard
 import model.board.Color
-import model.movement.move
+import model.movement.Move
 
 interface ReadOnlyChessGame {
 
     /**
      * Returns whether the game is over.
      */
-    fun isOver(): Boolean
+    fun isOngoing(): Boolean
 
     /**
      * Returns the current status of the game.
@@ -46,13 +46,13 @@ interface ReadOnlyChessGame {
      * Returns the possible moves of the given color. If this method is called on a color, and it's not their turn,
      * this method should return an empty list.
      */
-    fun getMoves(color: Color): List<move>
+    fun getMoves(color: Color): List<Move>
 
     /**
      * Returns a read-only view of the ongoing game. Externals can use .toMutable() if they wish to obtain
      * a mutable instance.
      */
-    fun getBoard(): ChessBoard
+    fun getBoard(): ReadOnlyChessBoard
 
     /**
      * Returns a complete fen-string representing this game.

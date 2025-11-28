@@ -1,14 +1,14 @@
 package model.game
 
 import model.board.Board
+import model.board.ReadOnlyChessBoard
 import model.board.ChessBoard
-import model.board.MutableChessBoard
 import model.board.Color
 import model.utils.FenString
 import model.utils.Squares
 import model.movement.isCapture
 import model.movement.literal
-import model.movement.move
+import model.movement.Move
 import model.movement.movingPiece
 import model.board.CastleRights
 import model.movement.InlinedBitBoardMoveGenerator
@@ -16,20 +16,21 @@ import model.movement.MoveGenerator
 import java.util.Stack
 
 class Game : ChessGame {        // maybe make a new class called "CommandedGame" for cheats and such {
-    private var board: MutableChessBoard
-    private var validMoves: List<move> = listOf()
+    private var board: ChessBoard
+    private var validMoves: List<Move> = listOf()
     private val mg: MoveGenerator
     private var started: Boolean = false
-    override var status: GameStatus = GameStatus.UNSTARTED
-    override var plies: Int
-    override var repetitionCount: Int
-    override var halfMoveClock: Int
-    override var winner: Color? = null
-    override var turn: Color
+
+    override var status: GameStatus = GameStatus.UNSTARTED; private set
+    override var plies: Int private set
+    override var repetitionCount: Int private set
+    override var halfMoveClock: Int private set
+    override var winner: Color? = null ;private set
+    override var turn: Color private set
     private val history: Stack<UndoInfo> = Stack()
 
     private class UndoInfo(
-        val board: MutableChessBoard,
+        val board: ChessBoard,
         val started: Boolean,
         val turn: Color,
         val plies: Int,
@@ -37,7 +38,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         val hmClock: Int,
         val status: GameStatus,
         val winner: Color?,
-        val moves: List<move>
+        val moves: List<Move>
     )
 
 
@@ -52,7 +53,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
     }
 
     private constructor(
-        board: MutableChessBoard, started: Boolean, turn: Color, plies: Int, repCount: Int,
+        board: ChessBoard, started: Boolean, turn: Color, plies: Int, repCount: Int,
         hmClock: Int, status: GameStatus, winner: Color?,
     ) {
         this.board = board
@@ -82,6 +83,14 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         return this
     }
 
+    override fun end(reason: GameStatus, setWinner: Color?) {
+        require(status.id == 0) { "Game is not ongoing. Cannot end a game with status $status"}
+        require(reason.id > 0) { "End status must be a terminal result (id > 0). $reason is not terminal" }
+        status = reason
+        winner = setWinner
+        validMoves = listOf() // clear moves
+    }
+
     override fun undoMove(): ChessGame {
         if (history.isEmpty()) return this
         val previous = history.pop()
@@ -98,18 +107,18 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         return this
     }
 
-    override fun isOver(): Boolean {
-        return status.id > 0
+    override fun isOngoing(): Boolean {
+        return status.id == 0
     }
 
 
 
-    override fun getMoves(color: Color): List<move> {
+    override fun getMoves(color: Color): List<Move> {
         if (turn != color) return listOf()
         return validMoves
     }
 
-    override fun getBoard(): ChessBoard {
+    override fun getBoard(): ReadOnlyChessBoard {
         return board // cannot be modified as a ChessBoard
     }
 
@@ -129,7 +138,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         return "${board.toFen()} ${turn.symbol} $castle $enpassant $halfMoveClock $moveNumber"
     }
 
-    override fun playMove(move: move): ChessGame {
+    override fun playMove(move: Move): ChessGame {
         require(status == GameStatus.ONGOING) {
             "Cannot play move. Game status is: $status. To avoid this issue, use isOver()"
         }

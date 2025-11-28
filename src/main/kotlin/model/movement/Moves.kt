@@ -5,7 +5,7 @@ import model.board.Piece.Type
 import model.utils.Squares
 import model.utils.square
 
-typealias move = Int
+typealias Move = Int
 
 private const val MOVING_PIECE_SHIFT = 0 // 4 bits
 private const val FROM_SHIFT = MOVING_PIECE_SHIFT + 4  // 6 bits
@@ -23,7 +23,7 @@ private const val PROMOTION_SELECTOR = 0b111 shl PROMOTION_SHIFT
 private const val CAPTURE_SELECTOR = 0b1 shl CAPTURE_SHIFT
 
 object Moves {                                    // promotion = pawn to remove boolean checking for NONE
-    fun encode(movingPiece: Piece, from: square, to: square, promotion: Type = Type.PAWN, isCapture: Boolean = false): move {
+    fun encode(movingPiece: Piece, from: square, to: square, promotion: Type = Type.PAWN, isCapture: Boolean = false): Move {
         return  (movingPiece.id shl MOVING_PIECE_SHIFT) or
                 (from shl FROM_SHIFT) or
                 (to shl TO_SHIFT) or
@@ -32,15 +32,15 @@ object Moves {                                    // promotion = pawn to remove 
     }
 }
 
-fun move.from(): Int = (this and FROM_SELECTOR) shr FROM_SHIFT
-fun move.to(): Int = (this and TO_SELECTOR) shr TO_SHIFT
-fun move.promotionType(): Type   {
+fun Move.from(): Int = (this and FROM_SELECTOR) shr FROM_SHIFT
+fun Move.to(): Int = (this and TO_SELECTOR) shr TO_SHIFT
+fun Move.promotionType(): Type   {
     val type = ((this and PROMOTION_SELECTOR) shr PROMOTION_SHIFT)
     return if (type == 0) Type.NONE else Type.promotions[type - 1]
 }
-fun move.isCapture(): Boolean = (this and CAPTURE_SELECTOR) shr CAPTURE_SHIFT == 1
-fun move.literal(): String = "${Squares.asText(from())}${Squares.asText(to())}${(if (promotionType() != Type.NONE) Piece.from(promotionType(), movingPiece().color).symbol else "") }"
-fun move.movingPiece(): Piece = Piece.from((this and MOVING_PIECE_SELECTOR) shr MOVING_PIECE_SHIFT)
+fun Move.isCapture(): Boolean = (this and CAPTURE_SELECTOR) shr CAPTURE_SHIFT == 1
+fun Move.literal(): String = "${Squares.asText(from())}${Squares.asText(to())}${(if (promotionType() != Type.NONE) Piece.from(promotionType(), movingPiece().color).symbol else "") }"
+fun Move.movingPiece(): Piece = Piece.from((this and MOVING_PIECE_SELECTOR) shr MOVING_PIECE_SHIFT)
 
 
 
