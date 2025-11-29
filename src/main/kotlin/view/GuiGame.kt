@@ -164,6 +164,10 @@ class GuiGame  {
             if (text.contains("count moves")) {
                 println("total moves: ${Controller.game.getMoves(Controller.game.turn!!).size}")
             }
+            if (text.contains("get hash")) {
+                println(Controller.game.getBoard().hash)
+                println(Controller.game.getBoard().hash.toString(2))
+            }
         }
         //Controller.startGameWith(FenString())
 

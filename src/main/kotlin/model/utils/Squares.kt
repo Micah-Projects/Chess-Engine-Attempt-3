@@ -1,5 +1,6 @@
 package model.utils
 
+import DEBUG
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -23,6 +24,7 @@ object Squares {
     val range = 0..63
     private val fileNames = arrayOf("a", "b", "c", "d", "e", "f", "g", "h")
     private val rankNames = arrayOf("1", "2", "3", "4", "5", "6", "7", "8")
+    val selectors = ULongArray(COUNT) { 1uL shl it }
 
     /**
      * Returns the square which is represented by [text].
@@ -30,11 +32,11 @@ object Squares {
      * @throws IllegalArgumentException if The text is not in correct format or the parsed square doesn't exist.
      */
     fun valueOf(text: String): square {
-        require(text.length == 2) { "Invalid square notation: $text" }
+       if (DEBUG) require(text.length == 2) { "Invalid square notation: $text" }
         val converted = text.lowercase()
         val f = fileNames.indexOf(converted.first().toString())
         val r = rankNames.indexOf(converted.last().toString())
-        require(f != -1 && r != -1) { "Invalid file or rank in: $text" }
+        if (DEBUG) require(f != -1 && r != -1) { "Invalid file or rank in: $text" }
         val result = r * BOARD_AXIS_LENGTH + f
         return result
     }
@@ -181,13 +183,12 @@ object Squares {
     /**
      * Returns true if the square is in the range 0 to 63 (inclusive)
      */
-    fun isInBounds(square: square): Boolean = square in 0..63
+    fun isInBounds(square: square): Boolean = square in range
 
-    fun allInBounds(vararg squares: square): Boolean = squares.all { it in 0..63 }
+    fun allInBounds(vararg squares: square): Boolean = squares.all { it in range }
 
-    private fun assertInBounds(square: square, message: () -> String =
-        { "Square cannot be handled as it is not in bounds: $square" } )
+    private fun assertInBounds(square: square, message: String = "Square cannot be handled as it is not in bounds: $square" )
     {
-        require(isInBounds(square)) { message() }
+        if (DEBUG) require(isInBounds(square)) { message }
     }
 }

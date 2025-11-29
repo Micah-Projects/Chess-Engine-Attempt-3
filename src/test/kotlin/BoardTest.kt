@@ -35,7 +35,7 @@ class BoardTest {
             val s = random.nextInt(64)
             val p = Piece.random()
 
-            board.addPiece(p, s)
+            board.placePiece(p, s)
             assertTrue(board.fetchPiece(s) == p)
             assertTrue(board.fetchPieceBitBoard(p) and (1uL shl s) != 0uL)
         }
@@ -44,12 +44,12 @@ class BoardTest {
     @Test
     fun addPieceRemovesDifferentPieceFromSquare() {
         // Add a White Knight to a square
-        board.addPiece(WHITE_KNIGHT, 0)
+        board.placePiece(WHITE_KNIGHT, 0)
         assertTrue(board.fetchPiece(0) == WHITE_KNIGHT)
         assertTrue(board.fetchPieceBitBoard(WHITE_KNIGHT) and (1uL shl 0) != 0uL)
 
         // Add a black king onto the same square
-        board.addPiece(BLACK_KING, 0)
+        board.placePiece(BLACK_KING, 0)
         assertTrue(board.fetchPiece(0) == BLACK_KING)
         assertTrue(board.fetchPieceBitBoard(BLACK_KING) and (1uL shl 0) != 0uL)
 
@@ -59,7 +59,7 @@ class BoardTest {
 
     @Test
     fun addPieceThrowsForIllegalSquare() {
-        assertThrows<IllegalArgumentException> { board.addPiece(WHITE_KNIGHT, 73) }
+        assertThrows<IllegalArgumentException> { board.placePiece(WHITE_KNIGHT, 73) }
     }
 
     @Test
@@ -69,10 +69,10 @@ class BoardTest {
             val s = random.nextInt(64)
             val p = Piece.random()
 
-            board.addPiece(p, s)
+            board.placePiece(p, s)
             assertTrue(board.fetchPiece(s) == p)
             assertTrue(board.fetchPieceBitBoard(p) and (1uL shl s) != 0uL)
-            board.removePiece(s)
+            board.clearPiece(s)
             assertTrue(board.fetchPiece(s).isEmpty())
             assertTrue(board.fetchPieceBitBoard(p) and (1uL shl s) == 0uL)
 
@@ -82,7 +82,7 @@ class BoardTest {
 
     @Test
     fun removePieceThrowsForIllegalSquare() {
-        assertThrows<IllegalArgumentException> { board.removePiece(-4) }
+        assertThrows<IllegalArgumentException> { board.clearPiece(-4) }
     }
 
     @Test
@@ -100,7 +100,7 @@ class BoardTest {
             val p = Piece.random()
 
             // Add the random piece onto random square 1
-            board.addPiece(p, s1)
+            board.placePiece(p, s1)
             assertTrue(board.fetchPiece(s1) == p)
             assertTrue(board.fetchPieceBitBoard(p) and (1uL shl s1) != 0uL)
 
@@ -134,8 +134,8 @@ class BoardTest {
             val p2 = Piece.random()
 
             // Add the random pieces onto their respective random squares
-            board.addPiece(p1, s1)
-            board.addPiece(p2, s2)
+            board.placePiece(p1, s1)
+            board.placePiece(p2, s2)
             assertTrue(board.fetchPiece(s1) == p1)
             assertTrue(board.fetchPieceBitBoard(p1) and (1uL shl s1) != 0uL)
             assertTrue(board.fetchPiece(s2) == p2)
@@ -164,7 +164,7 @@ class BoardTest {
 
     @Test
     fun movePieceThrowsForNullMove() {
-        board.addPiece(BLACK_KNIGHT, 32)
+        board.placePiece(BLACK_KNIGHT, 32)
         assertThrows<IllegalArgumentException> { board.movePiece(32, 32) }
     }
 
@@ -181,7 +181,7 @@ class BoardTest {
 
     @Test
     fun movePieceThrowsForIllegalEndSquare() {
-        board.addPiece(BLACK_PAWN, 1)
+        board.placePiece(BLACK_PAWN, 1)
         assertThrows<IllegalArgumentException> { board.movePiece(1, 64) }
     }
 
@@ -200,7 +200,7 @@ class BoardTest {
             val p = Piece.random()
             for (s in 0.until(64)) {
                 if ((1uL shl s) and bb != 0uL ) {
-                    board.addPiece(p, s)
+                    board.placePiece(p, s)
                 }
             }
             assertEquals(bb, board.fetchPieceBitBoard(p) )
@@ -214,7 +214,7 @@ class BoardTest {
             val s = random.nextInt(64)
             val clone = board.clone()
 
-            clone.addPiece(p, s)
+            clone.placePiece(p, s)
             assertNotEquals(board.fetchPieceBitBoard(p), clone.fetchPieceBitBoard(p))
         }
 
@@ -232,7 +232,7 @@ class BoardTest {
                 s2 = random.nextInt(64)
             }
 
-            board.addPiece(p, s1)
+            board.placePiece(p, s1)
             val clone = board.clone()
             clone.movePiece(s1, s2)
 
@@ -267,7 +267,7 @@ class BoardTest {
     @Test
     fun doStuffForDebug() {
 
-        repeat(5) { board.addPiece(Piece.random(), random.nextInt(64)) }
+        repeat(5) { board.placePiece(Piece.random(), random.nextInt(64)) }
         repeat(5) {
             board = Board()
             var s1 = 0
@@ -282,8 +282,8 @@ class BoardTest {
             val p2 = Piece.random()
 
             // Add the random pieces onto their respective random squares
-            board.addPiece(p1, s1)
-            board.addPiece(p2, s2)
+            board.placePiece(p1, s1)
+            board.placePiece(p2, s2)
             assertTrue(board.fetchPiece(s1) == p1)
             assertTrue(board.fetchPieceBitBoard(p1) and (1uL shl s1) != 0uL)
             assertTrue(board.fetchPiece(s2) == p2)

@@ -11,13 +11,13 @@ interface ChessBoard : ReadOnlyChessBoard {
      * @param square The square index (0–63).
      * @param piece The chess piece
      */
-    fun addPiece(piece: Piece, square: Int)
+    fun placePiece(piece: Piece, square: Int)
 
     /**
      * Removes the piece on the given [square].
      * @param square The square index (0–63).
      */
-    fun removePiece(square: Int)
+    fun clearPiece(square: Int)
 
     /**
      * Moves a piece from [start] to [end] regardless of legality.

@@ -36,6 +36,13 @@ enum class Color(val value: Int, val symbol: String) {
         }
     }
 
+    val forwardOne: Int by lazy {
+        when (this) {
+            WHITE -> 8
+            BLACK -> -8
+        }
+    }
+
     val pawnStartRank: Int by lazy {
         when (this) {
             WHITE -> 1

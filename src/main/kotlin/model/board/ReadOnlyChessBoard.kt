@@ -3,7 +3,7 @@ package model.board
 import model.utils.BitBoard
 
 interface ReadOnlyChessBoard {
-
+    val hash: ULong
     /**
      * Returns the piece on the given [square].
      * @param square The square index (0–63).

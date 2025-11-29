@@ -145,6 +145,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         if (move !in validMoves) throw IllegalArgumentException("Move ${move.literal()} is invalid.")
         history.push(UndoInfo(board.toMutable(), started, turn, plies, repetitionCount, halfMoveClock, status, winner, validMoves.toList()))
         board.makeMove(move) // if move is capture or moving piece is pawn -> reset hmClock
+        println(board.hash)
         plies++
         if (move.isCapture() || move.movingPiece().isPawn()) halfMoveClock =
             0 else halfMoveClock++ // issues with captures resetting clock
