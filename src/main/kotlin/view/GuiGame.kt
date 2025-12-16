@@ -16,11 +16,13 @@ import javafx.stage.Stage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import model.ai.agents.RandomMover
 import model.board.Color
 import model.utils.Squares
 import model.board.Piece
 import model.game.Game
 import model.game.ReadOnlyChessGame
+import model.matches.MatchMaker
 import model.utils.FenString
 import model.utils.square
 import model.movement.BitBoardMoveGenerator
@@ -32,10 +34,29 @@ import kotlin.jvm.javaClass
 class GuiGame  {
     companion object : View {
         private const val SQUARE_DIMENSION = 67.5
+
+        private val palette: Palette get() {
+            return when (currentState) {
+                States.BOARD_STATE -> Palettes.default
+                States.PROMOTION_PROMPT -> Palettes.prompt
+            }
+        }
+        private val centerSquares = listOf(
+            Squares.valueOf("e4"),
+            Squares.valueOf("d4"),
+            Squares.valueOf("e5"),
+            Squares.valueOf("d5")
+        )
+
         private var viewGame: ReadOnlyChessGame = Game() // place holding
+        private var mouseX = -1.0
+        private var mouseY = -1.0
+
+        private lateinit var paintBrush: GraphicsContext
+
         var moveHighlights = setOf<Int>()
         var checkSquare = -1
-        var orientation = model.board.Color.WHITE
+        var orientation = Color.WHITE
         var currentState: States = States.BOARD_STATE
         var promoteColor = Color.WHITE
         var clickedSquare = -1
@@ -48,46 +69,30 @@ class GuiGame  {
             promoteColor = color
             currentState = States.PROMOTION_PROMPT
         }
-    }
+        private interface Palette {
+            val darkSquare: javafx.scene.paint.Color
+            val lightSquare: javafx.scene.paint.Color
+            val blueHighlight: javafx.scene.paint.Color
+            val redHighlight: javafx.scene.paint.Color
+        }
+        private object Palettes {
 
-    enum class States {
-        BOARD_STATE,
-        PROMOTION_PROMPT
-    }
+            val default = object: Palette {
+                override val darkSquare =  web("#D5AB6D")
+                override val lightSquare = web("#E9D4B4")
+                override val blueHighlight = web("#7DAFB5", 0.61)
+                override val redHighlight = web("#d91c1c", 0.55)
+            }
 
-
-    val palette: Palette get() {
-        return when (currentState) {
-            States.BOARD_STATE -> Palettes.default
-            States.PROMOTION_PROMPT -> Palettes.prompt
+            val prompt = object : Palette {
+                override val darkSquare =  web("#D5AB6D").darker()
+                override val lightSquare = web("#E9D4B4").darker()
+                override val blueHighlight = web("#7DAFB5", 0.61).darker()
+                override val redHighlight = web("#d91c1c", 0.55).darker()
+            }
         }
     }
-
-    private val centerSquares = listOf(
-        Squares.valueOf("e4"),
-        Squares.valueOf("d4"),
-        Squares.valueOf("e5"),
-        Squares.valueOf("d5")
-    )
-
-
-    @FXML
-    private lateinit var canvas: Canvas
-    private lateinit var stage: Stage
-
-    @FXML
-    private lateinit var scene: Scene
-
-    @FXML
-    private lateinit var commandLine: TextField
-    private lateinit var root: Parent
-    private lateinit var paintBrush: GraphicsContext
-
-    private var mouseX = -1.0
-    private var mouseY = -1.0
-
-
-    val imageIndex = arrayOf(
+    private val imageIndex = arrayOf(
         Image("Piece Images 2/White Pawn.png"),
         Image("Piece Images 2/White Knight.png"),
         Image("Piece Images 2/White Bishop.png"),
@@ -102,11 +107,21 @@ class GuiGame  {
         Image("Piece Images 2/Black King.png")
     )
 
+    enum class States {
+        BOARD_STATE,
+        PROMOTION_PROMPT
+    }
+
+    @FXML
+    private lateinit var canvas: Canvas
+    @FXML
+    private lateinit var commandLine: TextField
+
     @FXML
     fun openMenu(e: ActionEvent) {
-        root = FXMLLoader.load(javaClass.getResource("/Menu3.fxml"))
-        stage = ((e.source as Node).scene.window) as Stage
-        scene = Scene(root)
+        val root: Parent = FXMLLoader.load(javaClass.getResource("/Menu3.fxml"))
+        val stage: Stage = ((e.source as Node).scene.window) as Stage
+        val scene = Scene(root)
         stage.scene = scene
         stage.show()
     }
@@ -168,9 +183,21 @@ class GuiGame  {
                 println(Controller.game.getBoard().hash)
                 println(Controller.game.getBoard().hash.toString(2))
             }
+            if (text.contains("get status")) {
+                println(Controller.game.status)
+              //  println(Controller.game.getBoard().hash.toString(2))
+            }
+            if (text.contains("bm")) {
+                val g = viewGame.clone()
+                viewGame(g)
+                Controller.game = g
+                val timew: Long = 300L * Config.SECOND_NANOS
+                val timeb: Long = 300L * Config.SECOND_NANOS
+                val whiteBonus = 1_000_000L // 1 millis
+                val blackBonus = 1_000_000L // 1 millis
+                MatchMaker.match(RandomMover(), RandomMover(), g, timew, timeb)
+            }
         }
-        //Controller.startGameWith(FenString())
-
     }
 
     @Override
@@ -178,21 +205,19 @@ class GuiGame  {
         paintBrush = canvas.graphicsContext2D
         val refreshRate = object : AnimationTimer() {
             private var lastUpdate = 0L
-            val secondNanos = 1_000_000_000
-            val rate = secondNanos / Controller.fetchGuiRate()
             override fun handle(now: Long) {
-                if (now - lastUpdate >= rate) {
+                if (now - lastUpdate >= Config.GUI_TICK_RATE) {
                     lastUpdate = now
                     refreshScreen()
                 }
             }
         }
         refreshRate.start()
-        events()
+        registerEvents()
 
     }
 
-    fun events() {
+    private fun registerEvents() {
         canvas.setOnMousePressed { e ->
             mouseX = e.x - SQUARE_DIMENSION / 2
             mouseY = e.y - SQUARE_DIMENSION / 2
@@ -245,14 +270,12 @@ class GuiGame  {
              // clickedSquare = -1
         }
     }
-
     private fun refreshScreen() {
         when (currentState) {
             States.BOARD_STATE -> refreshBoard()
             States.PROMOTION_PROMPT -> showPromotionIcons(promoteColor)
         }
     }
-
     private fun showPromotionIcons(color: Color) {
         refreshBoard()
         paintBrush.fill = palette.darkSquare.darker()
@@ -269,32 +292,18 @@ class GuiGame  {
         renderPieces()
     }
 
-
-
-    interface Palette {
-        val darkSquare: javafx.scene.paint.Color
-        val lightSquare: javafx.scene.paint.Color
-        val blueHighlight: javafx.scene.paint.Color
-        val redHighlight: javafx.scene.paint.Color
+    private fun drawSquare(file: Int, rank: Int) {
+        drawSquare(Squares.fromFileRank(file, rank))
     }
-
-    object Palettes {
-
-       val default = object: Palette {
-           override val darkSquare =  web("#D5AB6D")
-           override val lightSquare = web("#E9D4B4")
-           override val blueHighlight = web("#7DAFB5", 0.61)
-           override val redHighlight = web("#d91c1c", 0.55)
-       }
-
-       val prompt = object : Palette {
-           override val darkSquare =  web("#D5AB6D").darker()
-           override val lightSquare = web("#E9D4B4").darker()
-           override val blueHighlight = web("#7DAFB5", 0.61).darker()
-           override val redHighlight = web("#d91c1c", 0.55).darker()
-       }
-   }
-
+    private fun drawSquare(square: square) {
+        val oriented = orient(square)
+        paintBrush.fillRect(
+            Squares.fileOf(oriented) * SQUARE_DIMENSION,
+            Squares.rankOf(oriented) * SQUARE_DIMENSION,
+            SQUARE_DIMENSION,
+            SQUARE_DIMENSION
+        )
+    }
     private fun renderSquares() {
         for (rank in 0 until Squares.NUM_RANKS) {
             for (file in 0 until Squares.NUM_FILES) {
@@ -320,61 +329,6 @@ class GuiGame  {
             }
         }
     }
-
-    private fun drawSquare(file: Int, rank: Int) {
-        drawSquare(Squares.fromFileRank(file, rank))
-    }
-
-    private fun drawSquare(square: square) {
-        val oriented = orient(square)
-        paintBrush.fillRect(
-            Squares.fileOf(oriented) * SQUARE_DIMENSION,
-            Squares.rankOf(oriented) * SQUARE_DIMENSION,
-            SQUARE_DIMENSION,
-            SQUARE_DIMENSION
-        )
-    }
-    private fun drawPieceAt(piece: Piece, square: square) {
-        drawPieceAt(piece, Squares.fileOf(square), Squares.rankOf(square))
-    }
-
-    private fun drawPieceAtMouse(piece: Piece) {
-        if (!piece.isEmpty()) {
-            val image = imageIndex[piece.id]
-            paintBrush.drawImage(
-                image,
-                mouseX,
-                mouseY,
-                SQUARE_DIMENSION,
-                SQUARE_DIMENSION
-            )
-        }
-    }
-
-    private fun drawPieceAt(piece: Piece, file: square, rank: square) {
-        val (file, rank) = orient(file, rank)
-        if (!piece.isEmpty()) {
-            val image = imageIndex[piece.id]
-            paintBrush.drawImage(
-                image,
-                file * SQUARE_DIMENSION,
-                rank * SQUARE_DIMENSION,
-                SQUARE_DIMENSION,
-                SQUARE_DIMENSION
-            )
-        }
-    }
-
-    private fun renderPieces() {
-        for (square in Squares.range) {
-            if (square != clickedSquare) {
-                drawPieceAt(viewGame.getBoard().fetchPiece(square), square)
-            }
-        }
-            drawPieceAtMouse(viewGame.getBoard().fetchPiece(clickedSquare)) // for layering
-
-    }
-
     private fun renderSquareVisuals() {
         for (rank in 0 until Squares.NUM_RANKS) {
             for (file in 0 until Squares.NUM_FILES) {
@@ -394,9 +348,45 @@ class GuiGame  {
         }
 
     }
-    private fun adjustForOrientation(coords: Pair<Int, Int>): Pair<Int, Int> {
-        return if (orientation == Color.WHITE) Pair(coords.first, 7 - coords.second) else coords
+
+    private fun drawPieceAt(piece: Piece, square: square) {
+        drawPieceAt(piece, Squares.fileOf(square), Squares.rankOf(square))
     }
+    private fun drawPieceAt(piece: Piece, file: square, rank: square) {
+        val (file, rank) = orient(file, rank)
+        if (!piece.isEmpty()) {
+            val image = imageIndex[piece.id]
+            paintBrush.drawImage(
+                image,
+                file * SQUARE_DIMENSION,
+                rank * SQUARE_DIMENSION,
+                SQUARE_DIMENSION,
+                SQUARE_DIMENSION
+            )
+        }
+    }
+    private fun drawPieceAtMouse(piece: Piece) {
+        if (!piece.isEmpty()) {
+            val image = imageIndex[piece.id]
+            paintBrush.drawImage(
+                image,
+                mouseX,
+                mouseY,
+                SQUARE_DIMENSION,
+                SQUARE_DIMENSION
+            )
+        }
+    }
+    private fun renderPieces() {
+        for (square in Squares.range) {
+            if (square != clickedSquare) {
+                drawPieceAt(viewGame.getBoard().fetchPiece(square), square)
+            }
+        }
+            drawPieceAtMouse(viewGame.getBoard().fetchPiece(clickedSquare)) // for layering
+
+    }
+
     private fun orient(file: Int, rank: Int): Pair<Int, Int> {
         return if (orientation == Color.WHITE)  Pair(file,  7 - rank) else Pair(file, rank)
     }
@@ -405,6 +395,7 @@ class GuiGame  {
         val file = Squares.fileOf(square)
        return if (orientation == Color.WHITE)  Squares.fromFileRank(file,  7 - rank) else square
     }
+
     // lenience represents how exact the position has to be to return the square
     private fun getSquareFromScreen(x: Double, y: Double, lenience: Double = .825): square {
         val radius = lenience.coerceIn(0.0, 1.0) * (SQUARE_DIMENSION / 2)

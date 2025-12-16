@@ -18,9 +18,3 @@ data class PrintStats(override val game: ChessGame) : GameCommand {
         println(game.turn)
     }
 }
-
-//data class PrintBoard(override val game: ChessGame, val viewFrom: Color = Color.WHITE) : GameCommand {
-//    override fun exec() {
-//        println(game.getBoard().textVisual(viewFrom))
-//    }
-//}

@@ -307,7 +307,7 @@ class BitBoardMoveGenerator : MoveGenerator {
 
         attackMask = attackMask and friendlyOccupancy.inv() // pieces can never hurt their team
         BitBoards.iterateBits(attackMask) { attack ->
-            addMove(Moves.encode(piece,position, attack))
+            addMove(Moves.encode(piece,position, attack, isCapture =  board.fetchPiece(attack).id != -1))
         }
     }
 
@@ -476,14 +476,15 @@ class BitBoardMoveGenerator : MoveGenerator {
         promotion: Boolean = false
     ) {
         val safeMask = accountedForKingSafety(piece,from, attackMask)
+        val cap = board.fetchPiece(to).id != -1
         if ((safeMask and (1uL shl to)) != 0uL) {
             if (promotion) {
-                addMove(Moves.encode(piece, from, to, Type.ROOK))
-                addMove(Moves.encode(piece, from, to, Type.QUEEN))
-                addMove(Moves.encode(piece, from, to, Type.BISHOP))
-                addMove(Moves.encode(piece, from, to, Type.KNIGHT))
+                addMove(Moves.encode(piece, from, to, Type.ROOK, cap))
+                addMove(Moves.encode(piece, from, to, Type.QUEEN, cap))
+                addMove(Moves.encode(piece, from, to, Type.BISHOP, cap))
+                addMove(Moves.encode(piece, from, to, Type.KNIGHT, cap))
             } else {
-                addMove(Moves.encode(piece, from, to))
+                addMove(Moves.encode(piece, from, to, isCapture = cap))
             }
 
         }

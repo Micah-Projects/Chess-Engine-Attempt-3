@@ -11,8 +11,10 @@ import model.movement.literal
 import model.movement.Move
 import model.movement.movingPiece
 import model.board.CastleRights
+import model.board.Piece
 import model.movement.InlinedBitBoardMoveGenerator
 import model.movement.MoveGenerator
+import model.movement.to
 import java.util.Stack
 
 class Game : ChessGame {        // maybe make a new class called "CommandedGame" for cheats and such {
@@ -85,7 +87,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
 
     override fun end(reason: GameStatus, setWinner: Color?) {
         require(status.id == 0) { "Game is not ongoing. Cannot end a game with status $status"}
-        require(reason.id > 0) { "End status must be a terminal result (id > 0). $reason is not terminal" }
+        require(reason.id != 0) { "End status must be a terminal result (id > 0). $reason is not terminal" }
         status = reason
         winner = setWinner
         validMoves = listOf() // clear moves
@@ -144,12 +146,14 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
         }
         if (move !in validMoves) throw IllegalArgumentException("Move ${move.literal()} is invalid.")
         history.push(UndoInfo(board.toMutable(), started, turn, plies, repetitionCount, halfMoveClock, status, winner, validMoves.toList()))
-        board.makeMove(move) // if move is capture or moving piece is pawn -> reset hmClock
-        println(board.hash)
-        plies++
-        if (move.isCapture() || move.movingPiece().isPawn()) halfMoveClock =
+
+        if (board.fetchPiece(move.to()).isNotEmpty() || move.movingPiece().isPawn()) halfMoveClock =
             0 else halfMoveClock++ // issues with captures resetting clock
+        board.makeMove(move) // if move is capture or moving piece is pawn -> reset hmClock
+        plies++
         // if the board position was seen before, our rep count is the number of times it was seen before
+        //println(move.isCapture())
+        //println(move.movingPiece().isPawn())
         nextTurn()
         val inCheck = mg.isKingInCheck()
 
@@ -165,6 +169,7 @@ class Game : ChessGame {        // maybe make a new class called "CommandedGame"
             repetitionCount == 3 -> GameStatus.DRAW_REPETITION
             else -> GameStatus.ONGOING
         } // check for insufficient
+        //println(toFen())
         return this
         // here, do checks to make sure the game is still legal
     }

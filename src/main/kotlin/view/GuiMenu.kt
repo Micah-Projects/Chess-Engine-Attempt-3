@@ -1,5 +1,6 @@
 package view
 
+import controller.Controller
 import javafx.application.Application
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
@@ -19,24 +20,19 @@ class GuiMenu : Application() {
     private lateinit var root: Parent
 
 
+
     @FXML
     fun startVsAI(e: ActionEvent) {
-       // UI.Config.player1 = player.HumanPlayers.VisualPlayer()
-       // UI.Config.player2 = null       // null means random engine
         load(e)
     }
 
     @FXML
     fun aIVsAI(e: ActionEvent) {
-       // UI.Config.player1 = engines.MasterOfZeroDepth()
-       // UI.Config.player2 = engines.MasterOfZeroDepth()
         load(e)
     }
 
     @FXML
     fun playerVsPlayer(e: ActionEvent) {
-        //UI.Config.player1 = player.HumanPlayers.VisualPlayer()
-       // UI.Config.player2 = player.HumanPlayers.VisualPlayer()
         load(e)
     }
 
@@ -44,6 +40,7 @@ class GuiMenu : Application() {
         root = FXMLLoader.load(javaClass.getResource("/Game3.fxml"))
         stage = ((e.source as Node).scene.window) as Stage
         scene = Scene(root)
+        stage.setOnCloseRequest { Controller.shutDown() }
         stage.scene = scene
         stage.show()
     }

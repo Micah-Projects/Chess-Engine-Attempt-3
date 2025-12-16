@@ -105,7 +105,7 @@ class InlinedBitBoardMoveGenerator : MoveGenerator {
     private var safeSquares = 0uL
     private var enpassant: Int? = null
     private var kingAttackers = IntArray(Squares.COUNT) { -1 }
-    private var enemyContext = IntArray(Squares.COUNT)
+    private var enemyContext = IntArray(Squares.COUNT) { -1 }
     private var pieceSet: Array<Piece> = Piece.whitePieceSet
     private var kingBB: BitBoard = 0uL
 
@@ -245,7 +245,7 @@ class InlinedBitBoardMoveGenerator : MoveGenerator {
 
         attackMask = attackMask and friendlyOccupancy.inv() // pieces can never hurt their team
         BitBoards.iterateBits(attackMask) { attack ->
-            moveBuffer[pointer++] = Moves.encode(piece,position, attack)
+            moveBuffer[pointer++] = Moves.encode(piece,position, attack, isCapture = enemyContext[attack] != -1)
         }
     }
 
@@ -413,14 +413,16 @@ class InlinedBitBoardMoveGenerator : MoveGenerator {
         promotion: Boolean = false
     ) {
         val safeMask = accountedForKingSafety(piece,from, 1uL shl from, attackMask)
+
         if (safeMask and attackMask != 0uL) {
+            val capture = enemyContext[to] != -1
             if (promotion) {
-                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.ROOK)
-                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.QUEEN)
-                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.BISHOP)
-                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.KNIGHT)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.ROOK,capture )
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.QUEEN, capture)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.BISHOP, capture)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, Type.KNIGHT, capture)
             } else {
-                moveBuffer[pointer++] = Moves.encode(piece, from, to)
+                moveBuffer[pointer++] = Moves.encode(piece, from, to, isCapture =  capture)
             }
 
         }

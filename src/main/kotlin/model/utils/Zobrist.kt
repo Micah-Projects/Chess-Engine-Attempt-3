@@ -20,4 +20,6 @@ object Zobrist {
         ULongArray(Squares.COUNT) { Random.nextULong() }
     }
 
+    val turnKey = Random.nextULong()
+
 }
