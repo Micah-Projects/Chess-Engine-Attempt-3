@@ -48,6 +48,13 @@ object Controller : Features {
         commandQueue.add(PrintBoard(game.getBoard()))
     }
 
+    fun resetMetadata() {
+        MatchMaker.stopMatches()
+        game = Game()
+        GuiGame.viewGame(game)
+    }
+
+
     fun startGameWith(fen: FenString) {
         events.add {
             game = Game()

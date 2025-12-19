@@ -49,6 +49,7 @@ class GuiGame  {
         )
 
         private var viewGame: ReadOnlyChessGame = Game() // place holding
+        private var viewMatch: MatchMaker.Match? = null
         private var mouseX = -1.0
         private var mouseY = -1.0
 
@@ -123,6 +124,7 @@ class GuiGame  {
         val stage: Stage = ((e.source as Node).scene.window) as Stage
         val scene = Scene(root)
         stage.scene = scene
+        Controller.resetMetadata()
         stage.show()
     }
 
@@ -187,6 +189,10 @@ class GuiGame  {
                 println(Controller.game.status)
               //  println(Controller.game.getBoard().hash.toString(2))
             }
+            if (text.contains("stop matches")) {
+               MatchMaker.stopMatches()
+                //  println(Controller.game.getBoard().hash.toString(2))
+            }
             if (text.contains("bm")) {
                 val g = viewGame.clone()
                 viewGame(g)
@@ -195,7 +201,8 @@ class GuiGame  {
                 val timeb: Long = 300L * Config.SECOND_NANOS
                 val whiteBonus = 1_000_000L // 1 millis
                 val blackBonus = 1_000_000L // 1 millis
-                MatchMaker.match(RandomMover(), RandomMover(), g, timew, timeb)
+                viewMatch = MatchMaker.Match(RandomMover(), RandomMover(), g, timew, timeb)
+                viewMatch?.start()
             }
         }
     }

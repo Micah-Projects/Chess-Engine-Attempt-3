@@ -15,6 +15,7 @@ import model.movement.Move
 import model.utils.FenString
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.concurrent.thread
+import kotlin.random.Random
 
 /*
 The Match Maker component is capable of hosting games between two players. It's responsible for running the game,
@@ -34,13 +35,26 @@ object MatchMaker {
     private var init = false
     private val tasks = ConcurrentLinkedQueue<() -> Unit>()
     private val matchSchedule = mutableListOf<Match>()
+    private val staleMatches = mutableListOf<Match>()
     private var lastUpdateTime: Long = 0
+    private var sessionKey: Long = Random.nextLong()
 
     fun initMatchThread() {
         if (init) return
         init = true
         thread(name = "MatchThread", isDaemon = true) {
             matchLoop()
+        }
+    }
+
+    fun stopMatches() {
+        val oldKey = sessionKey
+        do { sessionKey = Random.nextLong() } while (sessionKey == oldKey) // account for the small chance it's the same
+    }
+
+    fun stopMatch(match: Match) {
+        tasks.add {
+            staleMatches.add(match)
         }
     }
 
@@ -62,8 +76,17 @@ object MatchMaker {
             }
             // println("${match.activeListener.timeRemaining}, ${match.getGame().turn}")
             match.update()
+
+            if (isInvalidKey(match.sessionKey)) {
+                staleMatches.add(match)
+            }
         }
+        matchSchedule.removeAll(staleMatches)
+        staleMatches.clear()
     }
+
+    private fun isValidKey(sessionKey: Long): Boolean = sessionKey == this.sessionKey
+    private fun isInvalidKey(sessionKey: Long): Boolean = sessionKey != this.sessionKey
 
     interface Listener {
         fun getTime(): Long
@@ -129,6 +152,7 @@ object MatchMaker {
         private val lw = MoveListener(t1)
         private val lb = MoveListener(t2)
         private var started = false
+        val sessionKey = MatchMaker.sessionKey // use the current global key
 
         var activeListener: MoveListener = MoveListener(); private set
 
@@ -191,17 +215,20 @@ object MatchMaker {
                 }
             }
         }
-    }
 
-    private inline fun withRunning(game: ReadOnlyChessGame, crossinline block: () -> Unit) {
-        CoroutineScope(Dispatchers.Default).launch {
-            while (game.isOngoing()) {
-                block()
-                delay(Config.DELAY_TIME_MILLIS)
+
+        private inline fun withRunning(game: ChessGame, crossinline block: () -> Unit) {
+            CoroutineScope(Dispatchers.Default).launch {
+                while (game.isOngoing() && isValidKey(sessionKey)) {
+                    block()
+                    delay(Config.DELAY_TIME_MILLIS)
+                }
+                println("match ended")
             }
-
         }
     }
+
+
 
     // - - - called from outer threads, should remain responsive. - - -
     fun match(p1: Player, p2: Player, fen: FenString, t1: Long, t2: Long) {

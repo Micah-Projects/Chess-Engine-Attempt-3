@@ -42,6 +42,7 @@ class GuiMenu : Application() {
         scene = Scene(root)
         stage.setOnCloseRequest { Controller.shutDown() }
         stage.scene = scene
+        Controller.resetMetadata()
         stage.show()
     }
 
